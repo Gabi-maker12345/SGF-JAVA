@@ -1,14 +1,31 @@
 <!doctype html>
-<html lang="pt" class="scroll-smooth" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt" class="dark scroll-smooth" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SI Funcionarios | Painel</title>
+    <title>PeopleOps SI | Dashboard</title>
     <script>
         window.tailwind = window.tailwind || {};
         window.tailwind.config = {
             darkMode: 'class',
-            theme: { extend: { colors: { ink: '#172033', cloud: '#f6f8fc', ocean: '#2563eb', iris: '#6d5dfc', mint: '#10b981' }, boxShadow: { soft: '0 18px 48px rgba(23,32,51,.10)' } } }
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#07111F',
+                        midnight: '#0B1220',
+                        sidebar: '#050B18',
+                        panel: '#0F172A',
+                        primary: '#3B82F6',
+                        premium: '#7C3AED',
+                        neon: '#6366F1',
+                        success: '#22C55E',
+                        warning: '#F97316'
+                    },
+                    boxShadow: {
+                        glow: '0 24px 80px rgba(59, 130, 246, .20)'
+                    }
+                }
+            }
         };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,154 +33,185 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
     <script th:src="@{/js/dashboard.js}" defer></script>
 </head>
-<body class="app-shell min-h-screen bg-cloud text-ink dark:bg-slate-950 dark:text-slate-100" th:attr="data-page-message=${message}">
-<div class="flex min-h-screen">
-    <aside id="sidebar" class="soft-panel fixed inset-y-4 left-4 z-40 w-64 -translate-x-[110%] p-4 transition-transform duration-300 lg:translate-x-0 fade-in">
-        <a href="/dashboard" class="mb-7 flex items-center gap-3 px-1">
-            <span class="brand-mark"><i data-lucide="building-2"></i></span>
+<body class="premium-shell min-h-screen text-slate-50" th:attr="data-page-message=${message}">
+<div class="dashboard-layout">
+    <aside id="sidebar" class="sidebar-shell -translate-x-[110%] lg:translate-x-0">
+        <a href="/dashboard" class="brand-lockup sidebar-brand">
+            <span class="brand-emblem"><i data-lucide="sparkles"></i></span>
             <span>
-                <span class="block text-xs font-black uppercase tracking-[.18em] text-slate-400">SI</span>
-                <strong>Funcionarios</strong>
+                <strong>PeopleOps SI</strong>
+                <small>RH Intelligence</small>
             </span>
         </a>
-        <nav class="space-y-1">
+
+        <nav class="sidebar-nav">
             <a href="#overview" class="nav-link active"><i data-lucide="layout-dashboard"></i><span>Visao geral</span></a>
             <a href="#employees" class="nav-link"><i data-lucide="users-round"></i><span>Funcionarios</span></a>
             <a href="#departments" class="nav-link"><i data-lucide="network"></i><span>Departamentos</span></a>
-            <button type="button" class="nav-link w-full" data-open-modal="settingsModal"><i data-lucide="settings-2"></i><span>Preferencias</span></button>
+            <button type="button" class="nav-link w-full" data-open-modal="departmentModal"><i data-lucide="folder-plus"></i><span>Novo departamento</span></button>
         </nav>
-        <form th:action="@{/logout}" method="post" class="mt-6">
-            <button class="secondary-btn w-full justify-center" type="submit"><i data-lucide="log-out"></i>Sair</button>
+
+        <div class="sidebar-insight">
+            <span class="metric-icon violet"><i data-lucide="sparkle"></i></span>
+            <p>Folha salarial actual</p>
+            <strong th:text="${monthlyPayroll}">0 Kz</strong>
+            <small>Calculada com base nos funcionarios cadastrados.</small>
+        </div>
+
+        <form th:action="@{/logout}" method="post" class="mt-auto">
+            <button class="btn-secondary w-full justify-center" type="submit"><i data-lucide="log-out"></i>Sair</button>
         </form>
     </aside>
 
-    <div id="overlay" class="fixed inset-0 z-30 hidden bg-slate-950/35 backdrop-blur-sm lg:hidden"></div>
+    <div id="overlay" class="mobile-overlay hidden"></div>
 
-    <main class="w-full px-4 py-4 lg:ml-72 lg:px-7">
-        <header class="soft-panel sticky top-4 z-20 mb-5 flex items-center justify-between gap-4 px-4 py-3 fade-down">
-            <div class="flex items-center gap-3">
-                <button type="button" id="menuToggle" class="icon-btn lg:hidden" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
-                <div>
-                    <p class="section-kicker">Painel administrativo</p>
-                    <h1 class="text-xl font-black">Gestao de Funcionarios</h1>
+    <main class="dashboard-main">
+        <header class="dashboard-header reveal-down">
+            <div class="flex min-w-0 items-center gap-3">
+                <button type="button" id="menuToggle" class="icon-glass lg:hidden" aria-label="Abrir menu"><i data-lucide="menu"></i></button>
+                <div class="min-w-0">
+                    <span class="premium-kicker">Painel corporativo</span>
+                    <h1>Gestao de Funcionarios</h1>
+                    <p>Organize pessoas, departamentos e custos num ambiente seguro.</p>
                 </div>
             </div>
-            <div class="hidden min-w-64 items-center gap-2 rounded-2xl bg-white/55 px-3 py-2 dark:bg-slate-900/55 md:flex">
-                <i data-lucide="search" class="h-4 w-4 text-slate-400"></i>
-                <input id="employeeSearch" class="w-full bg-transparent text-sm outline-none" placeholder="Pesquisar funcionario">
+
+            <div class="header-tools">
+                <label class="search-glass">
+                    <i data-lucide="search"></i>
+                    <input id="employeeSearch" placeholder="Pesquisar funcionario">
+                </label>
+                <button type="button" id="themeToggle" class="icon-glass" aria-label="Alternar modo"><i data-lucide="moon"></i></button>
+                <button type="button" class="icon-glass" aria-label="Notificacoes"><i data-lucide="bell"></i></button>
             </div>
-            <button type="button" id="themeToggle" class="icon-btn" aria-label="Alternar modo escuro"><i data-lucide="moon"></i></button>
         </header>
 
-        <section id="overview" class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <article class="metric-card fade-up">
-                <div class="metric-icon bg-blue-100 text-ocean dark:bg-blue-500/15 dark:text-blue-300"><i data-lucide="users-round"></i></div>
-                <p>Total de funcionarios</p>
+        <section id="overview" class="metrics-grid">
+            <article class="metric-card reveal-up">
+                <span class="metric-icon blue"><i data-lucide="users-round"></i></span>
+                <p>Funcionarios</p>
                 <strong th:text="${totalEmployees}">0</strong>
-                <span>Registos no banco</span>
+                <small><i data-lucide="trending-up"></i> Base activa</small>
             </article>
-            <article class="metric-card fade-up delay-100">
-                <div class="metric-icon bg-emerald-100 text-mint dark:bg-emerald-500/15 dark:text-emerald-300"><i data-lucide="network"></i></div>
+            <article class="metric-card reveal-up delay-100">
+                <span class="metric-icon violet"><i data-lucide="network"></i></span>
                 <p>Departamentos</p>
                 <strong th:text="${departmentsCount}">0</strong>
-                <span>Unidades cadastradas</span>
+                <small><i data-lucide="layers-3"></i> Estrutura interna</small>
             </article>
-            <article class="metric-card fade-up delay-200">
-                <div class="metric-icon bg-violet-100 text-iris dark:bg-violet-500/15 dark:text-violet-300"><i data-lucide="wallet"></i></div>
+            <article class="metric-card reveal-up delay-200">
+                <span class="metric-icon green"><i data-lucide="wallet"></i></span>
                 <p>Folha salarial</p>
                 <strong th:text="${monthlyPayroll}">0 Kz</strong>
-                <span>Soma dos salarios</span>
+                <small><i data-lucide="circle-check"></i> Soma em tempo real</small>
             </article>
-            <article class="metric-card fade-up delay-300">
-                <div class="metric-icon bg-rose-100 text-rose-500 dark:bg-rose-500/15 dark:text-rose-300"><i data-lucide="chart-no-axes-column"></i></div>
+            <article class="metric-card reveal-up delay-300">
+                <span class="metric-icon orange"><i data-lucide="chart-no-axes-column"></i></span>
                 <p>Media salarial</p>
                 <strong th:text="${averageSalary}">0 Kz</strong>
-                <span>Calculada em tempo real</span>
+                <small><i data-lucide="activity"></i> Indicador geral</small>
             </article>
         </section>
 
-        <section class="mt-5 grid gap-5 xl:grid-cols-[1.45fr_.95fr]">
-            <article id="employees" class="soft-panel overflow-hidden fade-up">
-                <div class="flex flex-col gap-3 border-b border-slate-200/60 px-5 py-4 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+        <section class="content-grid">
+            <article id="employees" class="glass-card table-panel reveal-up">
+                <div class="panel-heading">
                     <div>
-                        <p class="section-kicker">Equipa</p>
-                        <h2 class="section-title">Funcionarios cadastrados</h2>
+                        <span class="premium-kicker">Directorio</span>
+                        <h2>Funcionarios cadastrados</h2>
                     </div>
-                    <button type="button" class="primary-btn" data-open-modal="employeeModal" th:disabled="${#lists.isEmpty(departmentOptions)}">
+                    <button type="button" class="btn-primary" data-open-modal="employeeModal" th:disabled="${#lists.isEmpty(departmentOptions)}">
                         <i data-lucide="user-plus"></i>Novo funcionario
                     </button>
                 </div>
+
                 <div class="empty-state" th:if="${#lists.isEmpty(employees)}">
-                    <i data-lucide="users-round"></i>
-                    <p>Nenhum funcionario cadastrado ainda.</p>
-                    <span>Crie um departamento e depois adicione o primeiro funcionario.</span>
+                    <span class="metric-icon blue"><i data-lucide="users-round"></i></span>
+                    <p>Nenhum funcionario cadastrado.</p>
+                    <small>Crie um departamento e use o botao Novo funcionario.</small>
                 </div>
-                <div class="overflow-x-auto" th:if="${!#lists.isEmpty(employees)}">
-                    <table class="min-w-full text-left text-sm">
-                        <thead class="text-xs uppercase tracking-[.14em] text-slate-400">
-                        <tr><th class="px-5 py-4">Nome</th><th class="px-5 py-4">Departamento</th><th class="px-5 py-4">Cargo</th><th class="px-5 py-4">Contacto</th><th class="px-5 py-4 text-right">Salario</th></tr>
+
+                <div class="table-wrap" th:if="${!#lists.isEmpty(employees)}">
+                    <table class="premium-table">
+                        <thead>
+                        <tr>
+                            <th>Funcionario</th>
+                            <th>Departamento</th>
+                            <th>Cargo</th>
+                            <th>Contacto</th>
+                            <th>Salario</th>
+                        </tr>
                         </thead>
-                        <tbody id="employeeRows" class="divide-y divide-slate-200/60 dark:divide-slate-800">
-                        <tr class="employee-row transition hover:bg-white/55 dark:hover:bg-slate-900/65" th:each="employee : ${employees}">
-                            <td class="px-5 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="avatar" th:text="${#strings.substring(employee.name,0,1)}">F</div>
-                                    <div><p class="font-bold" th:text="${employee.name}">Nome</p><p class="text-xs text-slate-400" th:text="${employee.email}">email</p></div>
+                        <tbody id="employeeRows">
+                        <tr class="employee-row" th:each="employee : ${employees}">
+                            <td>
+                                <div class="person-cell">
+                                    <span class="avatar" th:text="${#strings.substring(employee.name,0,1)}">F</span>
+                                    <span>
+                                        <strong th:text="${employee.name}">Nome</strong>
+                                        <small th:text="${employee.email}">email</small>
+                                    </span>
                                 </div>
                             </td>
-                            <td class="px-5 py-4 text-slate-500 dark:text-slate-300" th:text="${employee.department.name}">Departamento</td>
-                            <td class="px-5 py-4 text-slate-500 dark:text-slate-300" th:text="${employee.position}">Cargo</td>
-                            <td class="px-5 py-4 text-slate-500 dark:text-slate-300" th:text="${employee.phone == null || employee.phone.isBlank() ? 'Sem telefone' : employee.phone}">Telefone</td>
-                            <td class="px-5 py-4 text-right font-bold" th:text="${#numbers.formatDecimal(employee.salary, 0, 'POINT', 0, 'COMMA')} + ' Kz'">0 Kz</td>
+                            <td><span class="status-badge blue" th:text="${employee.department.name}">Departamento</span></td>
+                            <td th:text="${employee.position}">Cargo</td>
+                            <td th:text="${employee.phone == null || employee.phone.isBlank() ? 'Sem telefone' : employee.phone}">Telefone</td>
+                            <td class="font-semibold text-slate-100" th:text="${#numbers.formatDecimal(employee.salary, 0, 'POINT', 0, 'COMMA')} + ' Kz'">0 Kz</td>
                         </tr>
                         </tbody>
                     </table>
                 </div>
             </article>
 
-            <article id="departments" class="soft-panel p-5 fade-up delay-100">
-                <div class="mb-4 flex items-center justify-between">
-                    <div><p class="section-kicker">Organizacao</p><h2 class="section-title">Departamentos</h2></div>
-                    <button type="button" class="icon-btn" data-open-modal="departmentModal" aria-label="Criar departamento"><i data-lucide="plus"></i></button>
-                </div>
-                <div class="empty-state compact" th:if="${#lists.isEmpty(departments)}">
-                    <i data-lucide="network"></i>
-                    <p>Nenhum departamento criado.</p>
-                </div>
-                <div class="space-y-3" th:if="${!#lists.isEmpty(departments)}">
-                    <div class="department-card" th:each="department : ${departments}">
-                        <div class="flex items-center justify-between gap-3">
-                            <div><p class="font-bold" th:text="${department.name()}">Departamento</p><p class="text-sm text-slate-400" th:text="${department.description() == null || department.description().isBlank() ? 'Sem descricao' : department.description()}">Descricao</p></div>
-                            <span class="status-pill status-active"><span th:text="${department.employees()}">0</span></span>
-                        </div>
-                        <div class="mt-3 h-2 rounded-full bg-slate-200/70 dark:bg-slate-800">
-                            <div class="h-2 rounded-full bg-gradient-to-r from-ocean to-iris" th:style="'width:' + ${department.percentage()} + '%'"></div>
-                        </div>
+            <aside id="departments" class="glass-card department-panel reveal-up delay-100">
+                <div class="panel-heading compact">
+                    <div>
+                        <span class="premium-kicker">Mapa interno</span>
+                        <h2>Departamentos</h2>
                     </div>
+                    <button type="button" class="icon-glass" data-open-modal="departmentModal" aria-label="Criar departamento"><i data-lucide="plus"></i></button>
                 </div>
-            </article>
+
+                <div class="empty-state compact" th:if="${#lists.isEmpty(departments)}">
+                    <span class="metric-icon violet"><i data-lucide="network"></i></span>
+                    <p>Nenhum departamento.</p>
+                </div>
+
+                <div class="department-list" th:if="${!#lists.isEmpty(departments)}">
+                    <article th:each="department : ${departments}">
+                        <div class="department-row-head">
+                            <span>
+                                <strong th:text="${department.name()}">Departamento</strong>
+                                <small th:text="${department.description() == null || department.description().isBlank() ? 'Sem descricao' : department.description()}">Descricao</small>
+                            </span>
+                            <em th:text="${department.employees()}">0</em>
+                        </div>
+                        <div class="progress-track"><span th:style="'width:' + ${department.percentage()} + '%'"></span></div>
+                    </article>
+                </div>
+            </aside>
         </section>
     </main>
 </div>
 
 <section id="employeeModal" class="modal" aria-hidden="true">
-    <div class="modal-card max-w-2xl">
+    <div class="modal-card wide">
         <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
-        <p class="section-kicker">Cadastro</p>
+        <span class="premium-kicker">Cadastro</span>
         <h3 class="modal-title">Novo funcionario</h3>
-        <form th:action="@{/employees}" th:object="${employeeRequest}" method="post" class="mt-5 grid gap-4 md:grid-cols-2">
-            <label class="form-label">Nome completo<input class="form-input" th:field="*{name}" required></label>
-            <label class="form-label">Email<input class="form-input" type="email" th:field="*{email}" required></label>
-            <label class="form-label">Telefone<input class="form-input" th:field="*{phone}"></label>
-            <label class="form-label">Cargo<input class="form-input" th:field="*{position}" required></label>
-            <label class="form-label">Salario<input class="form-input" type="number" min="1" step="0.01" th:field="*{salary}" required></label>
-            <label class="form-label">Departamento
-                <select class="form-input" th:field="*{departmentId}" required>
+        <form th:action="@{/employees}" th:object="${employeeRequest}" method="post" class="form-grid">
+            <label class="field-label">Nome completo<input class="field-input" th:field="*{name}" required></label>
+            <label class="field-label">Email<input class="field-input" type="email" th:field="*{email}" required></label>
+            <label class="field-label">Telefone<input class="field-input" th:field="*{phone}"></label>
+            <label class="field-label">Cargo<input class="field-input" th:field="*{position}" required></label>
+            <label class="field-label">Salario<input class="field-input" type="number" min="1" step="0.01" th:field="*{salary}" required></label>
+            <label class="field-label">Departamento
+                <select class="field-input" th:field="*{departmentId}" required>
                     <option value="">Selecione</option>
                     <option th:each="departmentOption : ${departmentOptions}" th:value="${departmentOption.id}" th:text="${departmentOption.name}"></option>
                 </select>
             </label>
-            <button class="primary-btn justify-center md:col-span-2" type="submit">Guardar funcionario</button>
+            <button class="btn-primary justify-center md:col-span-2" type="submit">Guardar funcionario</button>
         </form>
     </div>
 </section>
@@ -171,34 +219,22 @@
 <section id="departmentModal" class="modal" aria-hidden="true">
     <div class="modal-card">
         <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
-        <p class="section-kicker">Estrutura</p>
+        <span class="premium-kicker">Estrutura</span>
         <h3 class="modal-title">Novo departamento</h3>
-        <form th:action="@{/departments}" th:object="${department}" method="post" class="mt-5 space-y-4">
-            <label class="form-label">Nome<input class="form-input" th:field="*{name}" required></label>
-            <label class="form-label">Descricao<textarea class="form-input min-h-28 resize-none" th:field="*{description}"></textarea></label>
-            <button class="primary-btn w-full justify-center" type="submit">Criar departamento</button>
+        <form th:action="@{/departments}" th:object="${department}" method="post" class="mt-6 space-y-4">
+            <label class="field-label">Nome<input class="field-input" th:field="*{name}" required></label>
+            <label class="field-label">Descricao<textarea class="field-input min-h-28 resize-none" th:field="*{description}"></textarea></label>
+            <button class="btn-primary w-full justify-center" type="submit">Criar departamento</button>
         </form>
-    </div>
-</section>
-
-<section id="settingsModal" class="modal" aria-hidden="true">
-    <div class="modal-card">
-        <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
-        <p class="section-kicker">Preferencias</p>
-        <h3 class="modal-title">Experiencia do painel</h3>
-        <div class="mt-5 space-y-3">
-            <label class="switch-row"><span>Modo escuro</span><input type="checkbox" id="darkSwitch"></label>
-            <label class="switch-row"><span>Animacoes suaves</span><input type="checkbox" checked disabled></label>
-        </div>
     </div>
 </section>
 
 <section id="messageModal" class="modal" aria-hidden="true">
     <div class="modal-card">
         <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
-        <div class="success-mark"><i data-lucide="check"></i></div>
-        <h3 class="modal-title mt-4 text-center">Tudo certo</h3>
-        <p id="messageText" class="mt-2 text-center text-sm text-slate-500 dark:text-slate-300"></p>
+        <div class="modal-symbol success"><i data-lucide="check"></i></div>
+        <h3 class="modal-title">Tudo certo</h3>
+        <p id="messageText" class="modal-copy"></p>
     </div>
 </section>
 </body>

@@ -1,42 +1,50 @@
 <!doctype html>
-<html lang="pt" class="scroll-smooth" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt" class="dark scroll-smooth" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SI Funcionarios | Login</title>
+    <title>PeopleOps SI | Login</title>
     <script>
         window.tailwind = window.tailwind || {};
-        window.tailwind.config = { darkMode: 'class', theme: { extend: { colors: { ink: '#172033', cloud: '#f6f8fc', ocean: '#2563eb', iris: '#6d5dfc' } } } };
+        window.tailwind.config = { darkMode: 'class', theme: { extend: { colors: { navy: '#07111F', midnight: '#0B1220', primary: '#3B82F6', premium: '#7C3AED' } } } };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" th:href="@{/css/soft-ui.css}">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
     <script th:src="@{/js/dashboard.js}" defer></script>
 </head>
-<body class="app-shell min-h-screen bg-cloud text-ink dark:bg-slate-950 dark:text-slate-100" th:attr="data-page-message=${message},data-page-message-type=${messageType}">
-<header class="mx-auto flex max-w-5xl items-center justify-between px-5 py-5 fade-in">
-    <a href="/" class="flex items-center gap-3"><span class="brand-mark"><i data-lucide="building-2"></i></span><span class="text-sm font-black uppercase tracking-[.16em]">SI Funcionarios</span></a>
-    <button type="button" id="themeToggle" class="icon-btn" aria-label="Alternar modo escuro"><i data-lucide="moon"></i></button>
+<body class="premium-shell min-h-screen text-slate-50" th:attr="data-page-message=${message},data-page-message-type=${messageType}">
+<header class="public-header reveal-down">
+    <a href="/" class="brand-lockup">
+        <span class="brand-emblem"><i data-lucide="sparkles"></i></span>
+        <span><strong>PeopleOps SI</strong><small>Acesso seguro</small></span>
+    </a>
+    <button type="button" id="themeToggle" class="icon-glass" aria-label="Alternar modo"><i data-lucide="moon"></i></button>
 </header>
 
-<main class="mx-auto grid min-h-[calc(100vh-96px)] max-w-5xl items-center px-5 pb-10">
-    <section class="mx-auto grid w-full max-w-4xl overflow-hidden rounded-[1.8rem] bg-white/72 shadow-soft backdrop-blur-xl dark:bg-slate-900/72 md:grid-cols-[.9fr_1.1fr] fade-up">
-        <div class="hidden bg-gradient-to-br from-slate-950 via-blue-950 to-iris p-8 text-white md:block">
-            <p class="section-kicker text-white/45">Acesso protegido</p>
-            <h1 class="mt-4 text-3xl font-black leading-tight">Entre para gerir a equipa com dados reais.</h1>
-            <p class="mt-4 text-sm leading-6 text-white/65">Depois do login, o painel mostra funcionarios e departamentos guardados no banco.</p>
-        </div>
-        <div class="p-6 md:p-8">
-            <p class="section-kicker">Login</p>
-            <h2 class="modal-title mt-2">Entrar no sistema</h2>
-            <form th:action="@{/login}" method="post" class="mt-6 space-y-4">
-                <label class="form-label">Email<input class="form-input" type="email" name="email" autocomplete="username" required></label>
-                <label class="form-label">Senha<input class="form-input" type="password" name="password" autocomplete="current-password" required></label>
-                <button class="primary-btn w-full justify-center" type="submit">Entrar</button>
+<main class="mx-auto grid min-h-[calc(100vh-96px)] max-w-6xl items-center px-5 pb-12">
+    <section class="auth-shell glass-card reveal-up">
+        <aside class="auth-visual">
+            <span class="premium-kicker">Sessao protegida</span>
+            <h1>Entre para gerir pessoas com precisao.</h1>
+            <p>O painel combina funcionarios, departamentos e folha salarial numa experiencia corporativa premium.</p>
+            <div class="auth-signal">
+                <span><i data-lucide="shield-check"></i></span>
+                <p>Autenticacao segura com sessao Spring Security.</p>
+            </div>
+        </aside>
+
+        <div class="auth-form">
+            <span class="premium-kicker">Login</span>
+            <h2>Bem-vindo de volta</h2>
+            <form th:action="@{/login}" method="post" class="mt-7 space-y-4">
+                <label class="field-label">Email<input class="field-input" type="email" name="email" autocomplete="username" required></label>
+                <label class="field-label">Senha<input class="field-input" type="password" name="password" autocomplete="current-password" required></label>
+                <button class="btn-primary w-full justify-center" type="submit">Entrar</button>
             </form>
-            <p class="mt-5 text-center text-sm text-slate-500 dark:text-slate-300">
+            <p class="mt-6 text-center text-sm text-slate-400">
                 Ainda nao tem conta?
-                <a class="font-black text-ocean dark:text-blue-300" href="/register">Criar conta</a>
+                <a class="font-semibold text-blue-300 transition hover:text-white" href="/register">Criar conta</a>
             </p>
         </div>
     </section>
@@ -45,9 +53,9 @@
 <section id="messageModal" class="modal" aria-hidden="true">
     <div class="modal-card">
         <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
-        <div class="success-mark"><i data-lucide="info"></i></div>
-        <h3 class="modal-title mt-4 text-center">Atencao</h3>
-        <p id="messageText" class="mt-2 text-center text-sm text-slate-500 dark:text-slate-300"></p>
+        <div class="modal-symbol info"><i data-lucide="info"></i></div>
+        <h3 class="modal-title">Atencao</h3>
+        <p id="messageText" class="modal-copy"></p>
     </div>
 </section>
 </body>

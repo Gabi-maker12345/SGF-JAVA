@@ -1,44 +1,62 @@
 <!doctype html>
-<html lang="pt" class="scroll-smooth" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt" class="dark scroll-smooth" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SI Funcionarios | Criar conta</title>
+    <title>PeopleOps SI | Criar conta</title>
     <script>
         window.tailwind = window.tailwind || {};
-        window.tailwind.config = { darkMode: 'class', theme: { extend: { colors: { ink: '#172033', cloud: '#f6f8fc', ocean: '#2563eb', iris: '#6d5dfc' } } } };
+        window.tailwind.config = { darkMode: 'class', theme: { extend: { colors: { navy: '#07111F', midnight: '#0B1220', primary: '#3B82F6', premium: '#7C3AED' } } } };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" th:href="@{/css/soft-ui.css}">
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
     <script th:src="@{/js/dashboard.js}" defer></script>
 </head>
-<body class="app-shell min-h-screen bg-cloud text-ink dark:bg-slate-950 dark:text-slate-100" th:attr="data-page-message=${message},data-page-message-type=${messageType}">
-<header class="mx-auto flex max-w-5xl items-center justify-between px-5 py-5 fade-in">
-    <a href="/" class="flex items-center gap-3"><span class="brand-mark"><i data-lucide="building-2"></i></span><span class="text-sm font-black uppercase tracking-[.16em]">SI Funcionarios</span></a>
-    <a href="/login" class="secondary-btn">Login</a>
+<body class="premium-shell min-h-screen text-slate-50" th:attr="data-page-message=${message},data-page-message-type=${messageType}">
+<header class="public-header reveal-down">
+    <a href="/" class="brand-lockup">
+        <span class="brand-emblem"><i data-lucide="sparkles"></i></span>
+        <span><strong>PeopleOps SI</strong><small>Novo acesso</small></span>
+    </a>
+    <a href="/login" class="btn-secondary">Login</a>
 </header>
 
-<main class="mx-auto grid min-h-[calc(100vh-96px)] max-w-5xl items-center px-5 pb-10">
-    <section class="mx-auto w-full max-w-xl rounded-[1.8rem] bg-white/72 p-6 shadow-soft backdrop-blur-xl dark:bg-slate-900/72 md:p-8 fade-up">
-        <p class="section-kicker">Nova conta</p>
-        <h1 class="modal-title mt-2">Criar acesso administrativo</h1>
-        <form th:action="@{/register}" th:object="${registerRequest}" method="post" class="mt-6 space-y-4">
-            <label class="form-label">Nome completo<input class="form-input" th:field="*{name}" required></label>
-            <label class="form-label">Email<input class="form-input" type="email" th:field="*{email}" required></label>
-            <label class="form-label">Senha<input class="form-input" type="password" th:field="*{password}" minlength="6" required></label>
-            <button class="primary-btn w-full justify-center" type="submit">Criar conta</button>
-        </form>
-        <p class="mt-5 text-center text-sm text-slate-500 dark:text-slate-300">Ja tem conta? <a class="font-black text-ocean dark:text-blue-300" href="/login">Entrar</a></p>
+<main class="mx-auto grid min-h-[calc(100vh-96px)] max-w-6xl items-center px-5 pb-12">
+    <section class="auth-shell glass-card reveal-up">
+        <aside class="auth-visual register-visual">
+            <span class="premium-kicker">Nova conta</span>
+            <h1>Crie o acesso administrativo.</h1>
+            <p>Depois de entrar, cadastre departamentos e vincule funcionarios a cada unidade da organizacao.</p>
+            <div class="auth-signal">
+                <span><i data-lucide="user-round-plus"></i></span>
+                <p>Conta criada com senha criptografada.</p>
+            </div>
+        </aside>
+
+        <div class="auth-form">
+            <span class="premium-kicker">Criar conta</span>
+            <h2>Acesso ao PeopleOps</h2>
+            <form th:action="@{/register}" th:object="${registerRequest}" method="post" class="mt-7 space-y-4">
+                <label class="field-label">Nome completo<input class="field-input" th:field="*{name}" required></label>
+                <label class="field-label">Email<input class="field-input" type="email" th:field="*{email}" required></label>
+                <label class="field-label">Senha<input class="field-input" type="password" th:field="*{password}" minlength="6" required></label>
+                <button class="btn-primary w-full justify-center" type="submit">Criar conta</button>
+            </form>
+            <p class="mt-6 text-center text-sm text-slate-400">
+                Ja tem conta?
+                <a class="font-semibold text-blue-300 transition hover:text-white" href="/login">Entrar</a>
+            </p>
+        </div>
     </section>
 </main>
 
 <section id="messageModal" class="modal" aria-hidden="true">
     <div class="modal-card">
         <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
-        <div class="success-mark"><i data-lucide="info"></i></div>
-        <h3 class="modal-title mt-4 text-center">Revise os dados</h3>
-        <p id="messageText" class="mt-2 text-center text-sm text-slate-500 dark:text-slate-300"></p>
+        <div class="modal-symbol info"><i data-lucide="info"></i></div>
+        <h3 class="modal-title">Revise os dados</h3>
+        <p id="messageText" class="modal-copy"></p>
     </div>
 </section>
 </body>
