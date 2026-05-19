@@ -103,21 +103,107 @@ document.addEventListener('DOMContentLoaded', () => {
     menuToggle?.addEventListener('click', () => setMenu(true));
     overlay?.addEventListener('click', () => setMenu(false));
 
-    document.querySelectorAll('.nav-link[href^="#"]').forEach((link) => {
-        link.addEventListener('click', () => {
-            document.querySelectorAll('.nav-link').forEach((item) => item.classList.remove('active'));
-            link.classList.add('active');
-            setMenu(false);
-        });
-    });
-
     const search = document.getElementById('employeeSearch');
-    search?.addEventListener('input', () => {
-        const query = search.value.trim().toLowerCase();
-        document.querySelectorAll('.employee-row').forEach((row) => {
+    const sectionButtons = document.querySelectorAll('[data-section-target]');
+    const viewSections = document.querySelectorAll('[data-view-section]');
+    const sectionTitle = document.getElementById('sectionTitle');
+    const sectionSubtitle = document.getElementById('sectionSubtitle');
+
+    const filterActiveRows = () => {
+        const activeSection = document.querySelector('[data-view-section].is-active');
+        const query = search?.value.trim().toLowerCase() || '';
+
+        document.querySelectorAll('.data-table-row').forEach((row) => {
+            row.style.display = '';
+        });
+
+        if (!activeSection || query === '') {
+            return;
+        }
+
+        activeSection.querySelectorAll('.data-table-row').forEach((row) => {
             row.style.display = row.textContent.toLowerCase().includes(query) ? '' : 'none';
         });
+    };
+
+    const showSection = (sectionId, updateHash = true) => {
+        const target = document.getElementById(sectionId) || document.getElementById('overview');
+        const activeButton = document.querySelector(`[data-section-target="${target.id}"]`);
+
+        viewSections.forEach((section) => {
+            const isActive = section === target;
+            section.classList.toggle('is-active', isActive);
+            section.hidden = !isActive;
+        });
+
+        sectionButtons.forEach((button) => {
+            button.classList.toggle('active', button === activeButton);
+        });
+
+        if (activeButton) {
+            if (sectionTitle) {
+                sectionTitle.textContent = activeButton.dataset.title || activeButton.textContent.trim();
+            }
+            if (sectionSubtitle) {
+                sectionSubtitle.textContent = activeButton.dataset.subtitle || '';
+            }
+        }
+
+        if (search) {
+            search.value = '';
+            search.placeholder = target.id === 'departments' ? 'Pesquisar departamento' : target.id === 'employees' ? 'Pesquisar funcionario' : 'Pesquisar no painel';
+        }
+
+        if (updateHash) {
+            history.replaceState(null, '', `#${target.id}`);
+        }
+
+        filterActiveRows();
+        setMenu(false);
+        refreshIcons();
+    };
+
+    sectionButtons.forEach((button) => {
+        button.addEventListener('click', () => showSection(button.dataset.sectionTarget));
     });
 
+    const initialSection = window.location.hash.replace('#', '') || 'overview';
+    showSection(initialSection, false);
+
+    search?.addEventListener('input', () => {
+        filterActiveRows();
+    });
+
+    const fitMonetaryText = () => {
+        document.querySelectorAll('.money-value, .salary-cell').forEach((element) => {
+            const digits = element.textContent.replace(/\D/g, '').length;
+            let size = '';
+
+            if (element.classList.contains('money-value')) {
+                const compact = Boolean(element.closest('.sidebar-insight'));
+                if (digits >= 14) {
+                    size = compact ? '.92rem' : '1.02rem';
+                } else if (digits >= 11) {
+                    size = compact ? '1.02rem' : '1.18rem';
+                } else if (digits >= 8) {
+                    size = compact ? '1.12rem' : '1.45rem';
+                }
+            } else if (digits >= 14) {
+                size = '.72rem';
+            } else if (digits >= 11) {
+                size = '.78rem';
+            } else if (digits >= 8) {
+                size = '.84rem';
+            }
+
+            if (size) {
+                element.style.setProperty('--fit-font-size', size);
+            } else {
+                element.style.removeProperty('--fit-font-size');
+            }
+        });
+    };
+
+    fitMonetaryText();
     refreshIcons();
 });

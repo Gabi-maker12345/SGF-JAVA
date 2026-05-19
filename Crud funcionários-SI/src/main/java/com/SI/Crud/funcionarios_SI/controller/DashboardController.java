@@ -18,6 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -157,6 +158,30 @@ public class DashboardController {
         return "redirect:/dashboard#employees";
     }
 
+    @PostMapping("/employees/{id}/update")
+    public String updateEmployee(
+            @PathVariable Long id,
+            @Valid @ModelAttribute EmployeeRequest employeeRequest,
+            BindingResult bindingResult,
+            RedirectAttributes redirectAttributes
+    ) {
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("message", "Nao foi possivel actualizar o funcionario. Verifique os campos.");
+            return "redirect:/dashboard#employees";
+        }
+
+        employeeService.update(id, employeeRequest);
+        redirectAttributes.addFlashAttribute("message", "Funcionario actualizado com sucesso.");
+        return "redirect:/dashboard#employees";
+    }
+
+    @PostMapping("/employees/{id}/delete")
+    public String deleteEmployee(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        employeeService.delete(id);
+        redirectAttributes.addFlashAttribute("message", "Funcionario enviado para a lixeira.");
+        return "redirect:/dashboard#employees";
+    }
+
     @PostMapping("/departments")
     public String createDepartment(
             @Valid @ModelAttribute Department department,
@@ -170,6 +195,35 @@ public class DashboardController {
 
         departmentService.create(department);
         redirectAttributes.addFlashAttribute("message", "Departamento criado com sucesso.");
+        return "redirect:/dashboard#departments";
+    }
+
+    @PostMapping("/departments/{id}/update")
+    public String updateDepartment(
+            @PathVariable Long id,
+            @Valid @ModelAttribute Department department,
+            BindingResult bindingResult,
+            RedirectAttributes redirectAttributes
+    ) {
+        if (bindingResult.hasErrors()) {
+            redirectAttributes.addFlashAttribute("message", "Nao foi possivel actualizar o departamento. Informe o nome.");
+            return "redirect:/dashboard#departments";
+        }
+
+        departmentService.update(id, department);
+        redirectAttributes.addFlashAttribute("message", "Departamento actualizado com sucesso.");
+        return "redirect:/dashboard#departments";
+    }
+
+    @PostMapping("/departments/{id}/delete")
+    public String deleteDepartment(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        if (employeeRepository.countByDepartmentId(id) > 0) {
+            redirectAttributes.addFlashAttribute("message", "Nao e possivel apagar um departamento com funcionarios vinculados.");
+            return "redirect:/dashboard#departments";
+        }
+
+        departmentService.delete(id);
+        redirectAttributes.addFlashAttribute("message", "Departamento enviado para a lixeira.");
         return "redirect:/dashboard#departments";
     }
 

@@ -28,7 +28,7 @@ class DashboardControllerTests {
     void publicPagesRender() throws Exception {
         mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("PeopleOps SI")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Gestao de funcionarios com clareza")));
 
         mockMvc.perform(get("/login"))
                 .andExpect(status().isOk())
