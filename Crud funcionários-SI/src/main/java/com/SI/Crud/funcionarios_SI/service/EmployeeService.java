@@ -1,5 +1,6 @@
 package com.SI.Crud.funcionarios_SI.service;
 
+import com.SI.Crud.funcionarios_SI.model.enums.EmployeeStatus;
 import com.SI.Crud.funcionarios_SI.exception.ResourceNotFoundException;
 import com.SI.Crud.funcionarios_SI.model.dto.request.EmployeeRequest;
 import com.SI.Crud.funcionarios_SI.model.dto.response.EmployeeResponse;
@@ -49,6 +50,7 @@ public class EmployeeService {
     private Employee findEmployee(Long id) {
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Funcionario nao encontrado com id: " + id));
+                
     }
 
     private void fillEmployee(Employee employee, EmployeeRequest request) {
@@ -61,6 +63,7 @@ public class EmployeeService {
         employee.setPosition(request.getPosition());
         employee.setSalary(request.getSalary());
         employee.setDepartment(department);
+        employee.setStatus(request.getStatus() != null ? request.getStatus() : EmployeeStatus.ATIVO);
     }
 
     private EmployeeResponse toResponse(Employee employee) {
@@ -74,6 +77,9 @@ public class EmployeeService {
                 .salary(employee.getSalary())
                 .departmentId(department != null ? department.getId() : null)
                 .departmentName(department != null ? department.getName() : null)
+                .status(employee.getStatus())
                 .build();
+
+
     }
 }

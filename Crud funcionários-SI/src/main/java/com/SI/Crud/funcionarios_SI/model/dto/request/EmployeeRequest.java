@@ -1,5 +1,6 @@
 package com.SI.Crud.funcionarios_SI.model.dto.request;
 
+import com.SI.Crud.funcionarios_SI.model.enums.EmployeeStatus;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -21,6 +22,8 @@ public class EmployeeRequest {
     private String email;
 
     private String phone;
+
+    private EmployeeStatus status;
 
     @NotBlank(message = "O cargo e obrigatorio")
     private String position;
