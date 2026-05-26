@@ -12,6 +12,7 @@ import com.SI.Crud.funcionarios_SI.service.DepartmentService;
 import com.SI.Crud.funcionarios_SI.service.EmployeeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -80,7 +81,7 @@ public class DashboardController {
         }
 
         if (bindingResult.hasErrors()) {
-            model.addAttribute("message", "Revise os dados da conta e tente novamente.");
+            model.addAttribute("message", firstBindingError(bindingResult, "Revise os dados da conta e tente novamente."));
             model.addAttribute("messageType", "error");
             return "register";
         }
@@ -91,14 +92,25 @@ public class DashboardController {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .role("ROLE_USER")
                 .build();
-        userRepository.save(user);
+        try {
+            userRepository.save(user);
+        } catch (DataIntegrityViolationException exception) {
+            model.addAttribute("message", "Este email ja esta registado.");
+            model.addAttribute("messageType", "error");
+            return "register";
+        }
 
         redirectAttributes.addFlashAttribute("message", "Conta criada. Entre para continuar.");
+        redirectAttributes.addFlashAttribute("messageType", "success");
         return "redirect:/login";
     }
 
     @GetMapping("/dashboard")
-    public String dashboard(Model model, @ModelAttribute("message") String message) {
+    public String dashboard(
+            Model model,
+            @ModelAttribute("message") String message,
+            @ModelAttribute("messageType") String messageType
+    ) {
         List<Employee> employees = employeeRepository.findAllWithDepartment().stream()
                 .sorted(Comparator.comparing(Employee::getName))
                 .toList();
@@ -139,6 +151,7 @@ public class DashboardController {
         model.addAttribute("monthlyPayroll", formatCurrency(employeeRepository.sumSalary()));
         model.addAttribute("averageSalary", formatAverageSalary());
         model.addAttribute("message", message);
+        model.addAttribute("messageType", messageType);
         return "dashboard";
     }
 
@@ -149,13 +162,20 @@ public class DashboardController {
             RedirectAttributes redirectAttributes
     ) {
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("message", "Nao foi possivel cadastrar o funcionario. Verifique os campos.");
-            return "redirect:/dashboard";
+            return redirectWithMessage(
+                    redirectAttributes,
+                    "redirect:/dashboard#employees",
+                    firstBindingError(bindingResult, "Nao foi possivel cadastrar o funcionario. Verifique os campos."),
+                    "error"
+            );
         }
 
-        employeeService.create(employeeRequest);
-        redirectAttributes.addFlashAttribute("message", "Funcionario cadastrado e vinculado ao departamento.");
-        return "redirect:/dashboard#employees";
+        try {
+            employeeService.create(employeeRequest);
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", "Funcionario cadastrado e vinculado ao departamento.", "success");
+        } catch (IllegalArgumentException | DataIntegrityViolationException exception) {
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", friendlyDatabaseMessage(exception), "error");
+        }
     }
 
     @PostMapping("/employees/{id}/update")
@@ -166,20 +186,30 @@ public class DashboardController {
             RedirectAttributes redirectAttributes
     ) {
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("message", "Nao foi possivel actualizar o funcionario. Verifique os campos.");
-            return "redirect:/dashboard#employees";
+            return redirectWithMessage(
+                    redirectAttributes,
+                    "redirect:/dashboard#employees",
+                    firstBindingError(bindingResult, "Nao foi possivel actualizar o funcionario. Verifique os campos."),
+                    "error"
+            );
         }
 
-        employeeService.update(id, employeeRequest);
-        redirectAttributes.addFlashAttribute("message", "Funcionario actualizado com sucesso.");
-        return "redirect:/dashboard#employees";
+        try {
+            employeeService.update(id, employeeRequest);
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", "Funcionario actualizado com sucesso.", "success");
+        } catch (IllegalArgumentException | DataIntegrityViolationException exception) {
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", friendlyDatabaseMessage(exception), "error");
+        }
     }
 
     @PostMapping("/employees/{id}/delete")
     public String deleteEmployee(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-        employeeService.delete(id);
-        redirectAttributes.addFlashAttribute("message", "Funcionario enviado para a lixeira.");
-        return "redirect:/dashboard#employees";
+        try {
+            employeeService.delete(id);
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", "Funcionario enviado para a lixeira.", "success");
+        } catch (IllegalArgumentException | DataIntegrityViolationException exception) {
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", friendlyDatabaseMessage(exception), "error");
+        }
     }
 
     @PostMapping("/departments")
@@ -189,13 +219,20 @@ public class DashboardController {
             RedirectAttributes redirectAttributes
     ) {
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("message", "Informe o nome do departamento.");
-            return "redirect:/dashboard";
+            return redirectWithMessage(
+                    redirectAttributes,
+                    "redirect:/dashboard#departments",
+                    firstBindingError(bindingResult, "Informe o nome do departamento."),
+                    "error"
+            );
         }
 
-        departmentService.create(department);
-        redirectAttributes.addFlashAttribute("message", "Departamento criado com sucesso.");
-        return "redirect:/dashboard#departments";
+        try {
+            departmentService.create(department);
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", "Departamento criado com sucesso.", "success");
+        } catch (IllegalArgumentException | DataIntegrityViolationException exception) {
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", friendlyDatabaseMessage(exception), "error");
+        }
     }
 
     @PostMapping("/departments/{id}/update")
@@ -206,25 +243,64 @@ public class DashboardController {
             RedirectAttributes redirectAttributes
     ) {
         if (bindingResult.hasErrors()) {
-            redirectAttributes.addFlashAttribute("message", "Nao foi possivel actualizar o departamento. Informe o nome.");
-            return "redirect:/dashboard#departments";
+            return redirectWithMessage(
+                    redirectAttributes,
+                    "redirect:/dashboard#departments",
+                    firstBindingError(bindingResult, "Nao foi possivel actualizar o departamento. Informe o nome."),
+                    "error"
+            );
         }
 
-        departmentService.update(id, department);
-        redirectAttributes.addFlashAttribute("message", "Departamento actualizado com sucesso.");
-        return "redirect:/dashboard#departments";
+        try {
+            departmentService.update(id, department);
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", "Departamento actualizado com sucesso.", "success");
+        } catch (IllegalArgumentException | DataIntegrityViolationException exception) {
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", friendlyDatabaseMessage(exception), "error");
+        }
     }
 
     @PostMapping("/departments/{id}/delete")
     public String deleteDepartment(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         if (employeeRepository.countByDepartmentId(id) > 0) {
-            redirectAttributes.addFlashAttribute("message", "Nao e possivel apagar um departamento com funcionarios vinculados.");
-            return "redirect:/dashboard#departments";
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", "Nao e possivel apagar um departamento com funcionarios vinculados.", "error");
         }
 
-        departmentService.delete(id);
-        redirectAttributes.addFlashAttribute("message", "Departamento enviado para a lixeira.");
-        return "redirect:/dashboard#departments";
+        try {
+            departmentService.delete(id);
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", "Departamento enviado para a lixeira.", "success");
+        } catch (IllegalArgumentException | DataIntegrityViolationException exception) {
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", friendlyDatabaseMessage(exception), "error");
+        }
+    }
+
+    private String redirectWithMessage(RedirectAttributes redirectAttributes, String redirectUrl, String message, String messageType) {
+        redirectAttributes.addFlashAttribute("message", message);
+        redirectAttributes.addFlashAttribute("messageType", messageType);
+        return redirectUrl;
+    }
+
+    private String firstBindingError(BindingResult bindingResult, String fallback) {
+        if (bindingResult.hasFieldErrors()) {
+            return bindingResult.getFieldErrors().get(0).getDefaultMessage();
+        }
+        return fallback;
+    }
+
+    private String friendlyDatabaseMessage(Exception exception) {
+        String message = exception.getMessage() == null ? "" : exception.getMessage().toLowerCase(Locale.ROOT);
+        if (exception instanceof IllegalArgumentException && !message.isBlank()) {
+            return exception.getMessage();
+        }
+        if (message.contains("duplicate") || message.contains("unique") || message.contains("constraint")) {
+            if (message.contains("employees") || message.contains("email")) {
+                return "Ja existe um registo com este email. Use outro email ou edite o registo existente.";
+            }
+            if (message.contains("departments") || message.contains("department") || message.contains("name")) {
+                return "Ja existe um departamento com este nome. Use outro nome ou edite o departamento existente.";
+            }
+            return "Ja existe um registo com estes dados. Verifique as informacoes e tente novamente.";
+        }
+        return "Nao foi possivel concluir a accao. Verifique os dados e tente novamente.";
     }
 
     private String formatAverageSalary() {

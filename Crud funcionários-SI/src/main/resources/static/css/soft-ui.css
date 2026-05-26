@@ -1267,6 +1267,12 @@ html:not(.dark) .field-input:focus {
     box-shadow: 0 0 30px rgba(59, 130, 246, .14);
 }
 
+.modal-symbol.warning {
+    background: rgba(249, 115, 22, .13);
+    color: #fdba74;
+    box-shadow: 0 0 30px rgba(249, 115, 22, .14);
+}
+
 .modal-symbol.danger {
     background: rgba(239, 68, 68, .13);
     color: #fca5a5;

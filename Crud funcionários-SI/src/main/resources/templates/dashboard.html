@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PeopleOps SI | Dashboard</title>
+    <title>SGF | Dashboard</title>
     <script>
         window.tailwind = window.tailwind || {};
         window.tailwind.config = {
@@ -33,13 +33,13 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js" defer></script>
     <script th:src="@{/js/dashboard.js}" defer></script>
 </head>
-<body class="premium-shell min-h-screen text-slate-50" th:attr="data-page-message=${message}">
+<body class="premium-shell min-h-screen text-slate-50" th:attr="data-page-message=${message},data-page-message-type=${messageType}">
 <div class="dashboard-layout">
     <aside id="sidebar" class="sidebar-shell -translate-x-[110%] lg:translate-x-0">
         <a href="/dashboard" class="brand-lockup sidebar-brand">
             <span class="brand-emblem"><i data-lucide="sparkles"></i></span>
             <span>
-                <strong>PeopleOps SI</strong>
+                <strong>SGF</strong>
                 <small>RH Intelligence</small>
             </span>
         </a>

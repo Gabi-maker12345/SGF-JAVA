@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PeopleOps SI | Criar conta</title>
+    <title>SGF | Criar conta</title>
     <script>
         window.tailwind = window.tailwind || {};
         window.tailwind.config = { darkMode: 'class', theme: { extend: { colors: { navy: '#07111F', midnight: '#0B1220', primary: '#3B82F6', premium: '#7C3AED' } } } };
@@ -17,7 +17,7 @@
 <header class="public-header reveal-down">
     <a href="/" class="brand-lockup">
         <span class="brand-emblem"><i data-lucide="sparkles"></i></span>
-        <span><strong>PeopleOps SI</strong><small>Novo acesso</small></span>
+        <span><strong>SGF</strong><small>Novo acesso</small></span>
     </a>
     <a href="/login" class="btn-secondary">Login</a>
 </header>
@@ -36,7 +36,7 @@
 
         <div class="auth-form">
             <span class="premium-kicker">Criar conta</span>
-            <h2>Acesso ao PeopleOps</h2>
+            <h2>Acesso ao SGF</h2>
             <form th:action="@{/register}" th:object="${registerRequest}" method="post" class="mt-7 space-y-4">
                 <label class="field-label">Nome completo<input class="field-input" th:field="*{name}" required></label>
                 <label class="field-label">Email<input class="field-input" type="email" th:field="*{email}" required></label>

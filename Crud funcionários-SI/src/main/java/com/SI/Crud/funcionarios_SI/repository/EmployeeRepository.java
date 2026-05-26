@@ -9,6 +9,10 @@ import java.util.List;
 
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
+    boolean existsByEmail(String email);
+
+    boolean existsByEmailAndIdNot(String email, Long id);
+
     long countByDepartmentId(Long departmentId);
 
     @Query("select e from Employee e join fetch e.department")

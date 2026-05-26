@@ -30,6 +30,10 @@ public class EmployeeService {
     }
 
     public EmployeeResponse create(EmployeeRequest request) {
+        if (employeeRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Ja existe um funcionario cadastrado com este email.");
+        }
+
         Employee employee = new Employee();
         fillEmployee(employee, request);
         return toResponse(employeeRepository.save(employee));
@@ -37,6 +41,10 @@ public class EmployeeService {
 
     public EmployeeResponse update(Long id, EmployeeRequest request) {
         Employee employee = findEmployee(id);
+        if (employeeRepository.existsByEmailAndIdNot(request.getEmail(), id)) {
+            throw new IllegalArgumentException("Ja existe outro funcionario cadastrado com este email.");
+        }
+
         fillEmployee(employee, request);
         return toResponse(employeeRepository.save(employee));
     }

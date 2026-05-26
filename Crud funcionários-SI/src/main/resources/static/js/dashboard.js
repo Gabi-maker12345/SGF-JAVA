@@ -61,7 +61,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const pageMessage = document.body.dataset.pageMessage;
     if (pageMessage && pageMessage.trim() !== '') {
+        const pageMessageType = document.body.dataset.pageMessageType || 'success';
+        const messageModal = document.getElementById('messageModal');
+        const messageSymbol = messageModal?.querySelector('.modal-symbol');
+        const messageTitle = messageModal?.querySelector('.modal-title');
         const messageText = document.getElementById('messageText');
+
+        const modalState = {
+            success: { symbol: 'success', icon: 'check', title: 'Tudo certo' },
+            error: { symbol: 'danger', icon: 'triangle-alert', title: 'Validacao necessaria' },
+            warning: { symbol: 'warning', icon: 'circle-alert', title: 'Atencao' },
+            info: { symbol: 'info', icon: 'info', title: 'Atencao' }
+        }[pageMessageType] || { symbol: 'info', icon: 'info', title: 'Atencao' };
+
+        if (messageSymbol) {
+            messageSymbol.className = `modal-symbol ${modalState.symbol}`;
+            messageSymbol.innerHTML = `<i data-lucide="${modalState.icon}"></i>`;
+        }
+
+        if (messageTitle) {
+            messageTitle.textContent = modalState.title;
+        }
+
         if (messageText) {
             messageText.textContent = pageMessage;
             openModal('messageModal');

@@ -24,11 +24,19 @@ public class DepartmentService {
     }
 
     public Department create(Department department) {
+        if (departmentRepository.existsByName(department.getName())) {
+            throw new IllegalArgumentException("Ja existe um departamento cadastrado com este nome.");
+        }
+
         return departmentRepository.save(department);
     }
 
     public Department update(Long id, Department request) {
         Department department = findById(id);
+        if (departmentRepository.existsByNameAndIdNot(request.getName(), id)) {
+            throw new IllegalArgumentException("Ja existe outro departamento cadastrado com este nome.");
+        }
+
         department.setName(request.getName());
         department.setDescription(request.getDescription());
         return departmentRepository.save(department);

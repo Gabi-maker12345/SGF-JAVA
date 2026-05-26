@@ -21,6 +21,10 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponse register(RegisterRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new IllegalArgumentException("Este email ja esta registado.");
+        }
+
         User user = User.builder()
                 .name(request.getName())
                 .email(request.getEmail())
