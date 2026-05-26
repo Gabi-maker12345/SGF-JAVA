@@ -60,13 +60,6 @@
             </div>
         </nav>
 
-        <div class="sidebar-insight">
-            <span class="metric-icon violet"><i data-lucide="sparkle"></i></span>
-            <p>Folha salarial actual</p>
-            <strong class="money-value" th:text="${monthlyPayroll}">0 Kz</strong>
-            <small>Calculada com base nos funcionarios cadastrados.</small>
-        </div>
-
         <form th:action="@{/logout}" method="post" class="mt-auto">
             <button class="btn-secondary w-full justify-center" type="submit"><i data-lucide="log-out"></i>Sair</button>
         </form>
