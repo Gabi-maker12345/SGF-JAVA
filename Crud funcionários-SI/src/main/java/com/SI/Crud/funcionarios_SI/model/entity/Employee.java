@@ -6,6 +6,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import java.time.LocalDateTime;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -49,6 +50,9 @@ public class Employee {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EmployeeStatus status = EmployeeStatus.ATIVO;
+
+    private LocalDateTime deletedAt;
+
 
     
 }
