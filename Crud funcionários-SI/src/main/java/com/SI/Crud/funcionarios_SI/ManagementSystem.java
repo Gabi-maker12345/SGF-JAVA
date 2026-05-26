@@ -24,19 +24,25 @@ public class ManagementSystem {
 
                 switch (option) {
                     case "1":
-                        viewEmployeeDetails();
+                        createEmployeeAccount();
                         break;
                     case "2":
-                        updateEmployeeSalary();
+                        viewEmployeeDetails();
                         break;
                     case "3":
-                        viewAuditPanel();
+                        updateEmployeeSalary();
                         break;
                     case "4":
+                        deleteEmployeeAccount();
+                        break;
+                    case "5":
+                        viewAuditPanel();
+                        break;
+                    case "6":
                         System.out.println("Saindo do sistema com segurança...");
                         return;
                     default:
-                        System.out.println("Erro: Opção inválida! Digite apenas números de 1 a 4.");
+                        System.out.println("Erro: Opção inválida! Digite apenas números de 1 a 6.");
                 }
             } catch (Exception e) {
                 System.out.println("Ocorreu uma falha inesperada no sistema de leitura. Reiniciando menu.");
@@ -49,11 +55,57 @@ public class ManagementSystem {
         System.out.println("\n==================================================");
         System.out.println("  SISTEMA DE GESTÃO DE FUNCIONÁRIOS - ANGOLA (Kz) ");
         System.out.println("==================================================");
-        System.out.println("1. Ver Detalhes do Funcionário (Visão Individual)");
-        System.out.println("2. Alterar Salário (Validação de Mínimo Legal)");
-        System.out.println("3. Consultar Painel de Auditoria e Logs");
-        System.out.println("4. Sair");
+        System.out.println("1. Criar Conta de Funcionário");
+        System.out.println("2. Ver Detalhes do Funcionário (Visão Individual)");
+        System.out.println("3. Alterar Salário (Validação de Mínimo Legal)");
+        System.out.println("4. Excluir Conta de Funcionário");
+        System.out.println("5. Consultar Painel de Auditoria e Logs");
+        System.out.println("6. Sair");
         System.out.print("Escolha uma opção: ");
+    }
+
+    private static void createEmployeeAccount() {
+        try {
+            System.out.print("Digite o ID para o novo funcionário: ");
+            String id = scanner.nextLine().trim();
+            if (id.isEmpty()) {
+                System.out.println("Erro: ID não pode ser vazio.");
+                return;
+            }
+            if (database.containsKey(id)) {
+                System.out.println("Erro: Já existe um funcionário com este ID.");
+                return;
+            }
+
+            System.out.print("Digite o Nome do funcionário: ");
+            String name = scanner.nextLine().trim();
+            System.out.print("Digite o Departamento: ");
+            String department = scanner.nextLine().trim();
+            System.out.print("Digite o Salário Base em Kz (Mínimo: 100.000,00 Kz): ");
+            String salaryInput = scanner.nextLine().trim();
+
+            String cleanValue = salaryInput.replace(".", "").replace(",", ".");
+            double salary = Double.parseDouble(cleanValue);
+
+            Employee emp = new Employee(id, name, department, salary);
+            database.put(id, emp);
+
+            AuditService.logAction(
+                currentOperator, 
+                "CREATE_ACCOUNT", 
+                String.format("Nova conta criada - ID: %s, Nome: %s, Dept: %s, Salario: %,.2f Kz", id, name, department, salary)
+            );
+            System.out.println("Conta de funcionário criada com sucesso!");
+
+        } catch (NumberFormatException e) {
+            System.out.println("Erro: Digite um valor de salário válido.");
+            AuditService.logAction(currentOperator, "CREATE_ACCOUNT_FAILURE", "Erro de digitação numérica no salário.");
+        } catch (IllegalArgumentException e) {
+            System.out.println("Erro: " + e.getMessage());
+            AuditService.logAction(currentOperator, "CREATE_ACCOUNT_FAILURE", "Violação de regras de validação.");
+        } catch (Exception e) {
+            System.out.println("Erro inesperado ao criar conta.");
+        }
     }
 
     private static void viewEmployeeDetails() {
@@ -140,6 +192,29 @@ public class ManagementSystem {
         }
     }
 
+    private static void deleteEmployeeAccount() {
+        try {
+            System.out.print("Digite o ID do funcionário que deseja EXCLUIR: ");
+            String id = scanner.nextLine().trim();
+
+            if (!database.containsKey(id)) {
+                System.out.println("Erro: Funcionário não encontrado.");
+                return;
+            }
+
+            Employee emp = database.remove(id);
+            AuditService.logAction(
+                currentOperator, 
+                "DELETE_ACCOUNT", 
+                String.format("Conta removida definitivamente - ID: %s, Nome: %s", id, emp.getName())
+            );
+            System.out.println("Conta de funcionário removida com sucesso do sistema.");
+
+        } catch (Exception e) {
+            System.out.println("Erro ao tentar excluir a conta.");
+        }
+    }
+
     private static void viewAuditPanel() {
         try {
             System.out.println("\n=================================================================================");
@@ -147,13 +222,3 @@ public class ManagementSystem {
             System.out.println("=================================================================================");
             var allLogs = AuditService.getAllLogs();
             if (allLogs.isEmpty()) {
-                System.out.println("Nenhum log sensível registrado.");
-            } else {
-                allLogs.forEach(System.out.println);
-            }
-            System.out.println("=================================================================================");
-        } catch (Exception e) {
-            System.out.println("Falha ao ler logs de auditoria concorrentes.");
-        }
-    }
-}
