@@ -121,9 +121,15 @@
                         <span class="premium-kicker">Directorio</span>
                         <h2>Tabela de funcionarios</h2>
                     </div>
-                    <button type="button" class="btn-primary" data-open-modal="employeeModal" th:disabled="${#lists.isEmpty(departmentOptions)}">
-                        <i data-lucide="user-plus"></i>Novo funcionario
-                    </button>
+                    <div class="panel-actions">
+                        <button type="button" class="btn-secondary" data-open-modal="employeeTrashModal">
+                            <i data-lucide="trash-2"></i>Lixeira
+                            <span class="button-count" th:text="${trashEmployeesCount}">0</span>
+                        </button>
+                        <button type="button" class="btn-primary" data-open-modal="employeeModal" th:disabled="${#lists.isEmpty(departmentOptions)}">
+                            <i data-lucide="user-plus"></i>Novo funcionario
+                        </button>
+                    </div>
                 </div>
 
                 <div class="empty-state" th:if="${#lists.isEmpty(employees)}">
@@ -163,9 +169,6 @@
                                 <div class="row-actions">
                                     <button type="button" class="action-button edit" th:attr="data-open-modal='editEmployeeModal-' + ${employee.id}" aria-label="Editar funcionario">
                                         <i data-lucide="pencil"></i>
-                                    </button>
-                                    <button type="button" class="action-button remove" th:attr="data-open-modal='deleteEmployeeModal-' + ${employee.id}" aria-label="Excluir funcionario">
-                                        <i data-lucide="circle-x"></i>
                                     </button>
                                     <button type="button" class="action-button danger" th:attr="data-open-modal='deleteEmployeeModal-' + ${employee.id}" aria-label="Enviar funcionario para a lixeira">
                                         <i data-lucide="trash-2"></i>
@@ -221,9 +224,6 @@
                                     <button type="button" class="action-button edit" th:attr="data-open-modal='editDepartmentModal-' + ${department.id()}" aria-label="Editar departamento">
                                         <i data-lucide="pencil"></i>
                                     </button>
-                                    <button type="button" class="action-button remove" th:attr="data-open-modal='deleteDepartmentModal-' + ${department.id()}" aria-label="Excluir departamento">
-                                        <i data-lucide="circle-x"></i>
-                                    </button>
                                     <button type="button" class="action-button danger" th:attr="data-open-modal='deleteDepartmentModal-' + ${department.id()}" aria-label="Enviar departamento para a lixeira">
                                         <i data-lucide="trash-2"></i>
                                     </button>
@@ -246,9 +246,9 @@
         <form th:action="@{/employees}" th:object="${employeeRequest}" method="post" class="form-grid">
             <label class="field-label">Nome completo<input class="field-input" th:field="*{name}" required></label>
             <label class="field-label">Email<input class="field-input" type="email" th:field="*{email}" required></label>
-            <label class="field-label">Telefone<input class="field-input" th:field="*{phone}"></label>
+            <label class="field-label">Telefone<input class="field-input" th:field="*{phone}" inputmode="tel" placeholder="+244000000000" title="Use o formato angolano +244000000000"></label>
             <label class="field-label">Cargo<input class="field-input" th:field="*{position}" required></label>
-            <label class="field-label">Salario<input class="field-input" type="number" min="1" step="0.01" th:field="*{salary}" required></label>
+            <label class="field-label">Salario<input class="field-input" type="number" step="1000" th:field="*{salary}" required></label>
             <label class="field-label">Departamento
                 <select class="field-input" th:field="*{departmentId}" required>
                     <option value="">Selecione</option>
@@ -268,9 +268,9 @@
         <form th:action="@{/employees/{id}/update(id=${employee.id})}" method="post" class="form-grid">
             <label class="field-label">Nome completo<input class="field-input" name="name" th:value="${employee.name}" required></label>
             <label class="field-label">Email<input class="field-input" type="email" name="email" th:value="${employee.email}" required></label>
-            <label class="field-label">Telefone<input class="field-input" name="phone" th:value="${employee.phone}"></label>
+            <label class="field-label">Telefone<input class="field-input" name="phone" th:value="${employee.phone}" inputmode="tel" placeholder="+244000000000" title="Use o formato angolano +244000000000"></label>
             <label class="field-label">Cargo<input class="field-input" name="position" th:value="${employee.position}" required></label>
-            <label class="field-label">Salario<input class="field-input" type="number" min="1" step="0.01" name="salary" th:value="${employee.salary}" required></label>
+            <label class="field-label">Salario<input class="field-input" type="number" step="1000" name="salary" th:value="${employee.salary}" required></label>
             <label class="field-label">Departamento
                 <select class="field-input" name="departmentId" required>
                     <option th:each="departmentOption : ${departmentOptions}" th:value="${departmentOption.id}" th:selected="${departmentOption.id == employee.department.id}" th:text="${departmentOption.name}"></option>
@@ -286,11 +286,69 @@
         <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
         <div class="modal-symbol danger"><i data-lucide="trash-2"></i></div>
         <h3 class="modal-title">Enviar funcionario para a lixeira?</h3>
-        <p class="modal-copy">Esta accao remove o registo de <strong th:text="${employee.name}">funcionario</strong> da lista de funcionarios.</p>
+        <p class="modal-copy">Esta accao move <strong th:text="${employee.name}">funcionario</strong> para a lixeira. O registo podera ser restaurado depois.</p>
         <form th:action="@{/employees/{id}/delete(id=${employee.id})}" method="post" class="modal-actions">
             <button type="button" class="btn-secondary" data-close-modal>Cancelar</button>
-            <button type="submit" class="btn-danger"><i data-lucide="trash-2"></i>Apagar</button>
+            <button type="submit" class="btn-danger"><i data-lucide="trash-2"></i>Enviar para lixeira</button>
         </form>
+    </div>
+</section>
+
+<section id="employeeTrashModal" class="modal" aria-hidden="true">
+    <div class="modal-card wide">
+        <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
+        <span class="premium-kicker">Lixeira</span>
+        <h3 class="modal-title">Funcionarios na lixeira</h3>
+        <p class="modal-copy left">Restaure um funcionario para devolve-lo a tabela principal ou apague definitivamente o registo.</p>
+
+        <div class="empty-state compact modal-empty" th:if="${#lists.isEmpty(trashEmployees)}">
+            <span class="metric-icon green"><i data-lucide="circle-check"></i></span>
+            <p>Lixeira vazia.</p>
+        </div>
+
+        <div class="table-wrap modal-table-wrap" th:if="${!#lists.isEmpty(trashEmployees)}">
+            <table class="premium-table trash-table">
+                <thead>
+                <tr>
+                    <th>Funcionario</th>
+                    <th>Departamento</th>
+                    <th>Cargo</th>
+                    <th>Removido em</th>
+                    <th>Acoes</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="trashEmployee : ${trashEmployees}">
+                    <td>
+                        <div class="person-cell">
+                            <span class="avatar" th:text="${#strings.substring(trashEmployee.name,0,1)}">F</span>
+                            <span>
+                                <strong th:text="${trashEmployee.name}">Nome</strong>
+                                <small th:text="${trashEmployee.email}">email</small>
+                            </span>
+                        </div>
+                    </td>
+                    <td><span class="status-badge blue" th:text="${trashEmployee.department.name}">Departamento</span></td>
+                    <td th:text="${trashEmployee.position}">Cargo</td>
+                    <td th:text="${trashEmployee.deletedAt}">Data</td>
+                    <td>
+                        <div class="row-actions">
+                            <form th:action="@{/employees/{id}/restore(id=${trashEmployee.id})}" method="post">
+                                <button type="submit" class="action-button restore" aria-label="Restaurar funcionario">
+                                    <i data-lucide="rotate-ccw"></i>
+                                </button>
+                            </form>
+                            <form th:action="@{/employees/{id}/destroy(id=${trashEmployee.id})}" method="post">
+                                <button type="submit" class="action-button danger" aria-label="Apagar definitivamente">
+                                    <i data-lucide="trash-2"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </section>
 
@@ -324,13 +382,34 @@
     <div class="modal-card">
         <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
         <div class="modal-symbol danger"><i data-lucide="trash-2"></i></div>
-        <h3 class="modal-title">Enviar departamento para a lixeira?</h3>
-        <p class="modal-copy">
-            O departamento <strong th:text="${departmentItem.name()}">departamento</strong> so pode ser apagado se nao tiver funcionarios vinculados.
+        <h3 class="modal-title" th:if="${departmentItem.linkedEmployees() == 0}">Apagar departamento?</h3>
+        <h3 class="modal-title" th:if="${departmentItem.linkedEmployees() > 0}">Departamento com funcionarios</h3>
+        <p class="modal-copy" th:if="${departmentItem.linkedEmployees() == 0}">
+            O departamento <strong th:text="${departmentItem.name()}">departamento</strong> sera apagado definitivamente.
         </p>
-        <form th:action="@{/departments/{id}/delete(id=${departmentItem.id()})}" method="post" class="modal-actions">
+        <p class="modal-copy" th:if="${departmentItem.linkedEmployees() > 0}">
+            O departamento <strong th:text="${departmentItem.name()}">departamento</strong> tem
+            <strong th:text="${departmentItem.linkedEmployees()}">0</strong> funcionario(s) vinculados. Transfira-os para outro departamento ou crie um novo antes de apagar.
+        </p>
+        <form th:if="${departmentItem.linkedEmployees() == 0}" th:action="@{/departments/{id}/delete(id=${departmentItem.id()})}" method="post" class="modal-actions">
             <button type="button" class="btn-secondary" data-close-modal>Cancelar</button>
             <button type="submit" class="btn-danger"><i data-lucide="trash-2"></i>Apagar</button>
+        </form>
+        <form th:if="${departmentItem.linkedEmployees() > 0}" th:action="@{/departments/{id}/transfer-delete(id=${departmentItem.id()})}" method="post" class="mt-6 space-y-4">
+            <label class="field-label" th:if="${departmentsCount > 1}">Transferir para
+                <select class="field-input" name="targetDepartmentId">
+                    <option value="">Escolher outro departamento</option>
+                    <option th:each="targetDepartment : ${departmentOptions}" th:if="${targetDepartment.id != departmentItem.id()}" th:value="${targetDepartment.id}" th:text="${targetDepartment.name}"></option>
+                </select>
+            </label>
+            <div class="modal-separator" th:if="${departmentsCount > 1}"><span>ou criar novo departamento</span></div>
+            <p class="modal-copy left compact-copy" th:if="${departmentsCount <= 1}">Nao existe outro departamento disponivel. Crie um novo departamento para receber estes funcionarios automaticamente.</p>
+            <label class="field-label">Novo departamento<input class="field-input" name="newDepartmentName" placeholder="Ex: Recursos Humanos"></label>
+            <label class="field-label">Descricao<textarea class="field-input min-h-24 resize-none" name="newDepartmentDescription" placeholder="Descricao opcional"></textarea></label>
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" data-close-modal>Cancelar</button>
+                <button type="submit" class="btn-danger"><i data-lucide="shuffle"></i>Transferir e apagar</button>
+            </div>
         </form>
     </div>
 </section>

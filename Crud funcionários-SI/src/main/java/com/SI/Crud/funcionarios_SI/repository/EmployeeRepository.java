@@ -15,17 +15,30 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     long countByDepartmentId(Long departmentId);
 
+    long countByDepartmentIdAndDeletedAtIsNull(Long departmentId);
+
+    long countByDeletedAtIsNull();
+
+    List<Employee> findByDepartmentId(Long departmentId);
+
     @Query("select e from Employee e join fetch e.department")
     List<Employee> findAllWithDepartment();
+
+    @Query("select e from Employee e join fetch e.department where e.deletedAt is null")
+    List<Employee> findAllActiveWithDepartment();
+
+    @Query("select e from Employee e join fetch e.department where e.deletedAt is not null")
+    List<Employee> findAllInTrashWithDepartment();
 
     @Query("select coalesce(sum(e.salary), 0) from Employee e")
     BigDecimal sumSalary();
 
-    // NOVO — lixeira
+    @Query("select coalesce(sum(e.salary), 0) from Employee e where e.deletedAt is null")
+    BigDecimal sumActiveSalary();
+
     @Query("select e from Employee e where e.deletedAt is not null")
     List<Employee> findAllInTrash();
 
-    // NOVO — ativos (excluir os que estão na lixeira)
     @Query("select e from Employee e where e.deletedAt is null")
     List<Employee> findAllActive();
 }

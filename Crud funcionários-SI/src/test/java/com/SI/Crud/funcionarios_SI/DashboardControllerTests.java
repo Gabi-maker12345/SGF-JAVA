@@ -36,6 +36,6 @@ class DashboardControllerTests {
 
         mockMvc.perform(get("/register"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Acesso ao PeopleOps")));
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Acesso ao SGF")));
     }
 }

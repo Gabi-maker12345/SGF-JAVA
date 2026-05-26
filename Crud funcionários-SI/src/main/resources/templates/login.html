@@ -37,9 +37,9 @@
         <div class="auth-form">
             <span class="premium-kicker">Login</span>
             <h2>Bem-vindo de volta</h2>
-            <form th:action="@{/login}" method="post" class="mt-7 space-y-4">
-                <label class="field-label">Email<input class="field-input" type="email" name="email" autocomplete="username" required></label>
-                <label class="field-label">Senha<input class="field-input" type="password" name="password" autocomplete="current-password" required></label>
+            <form id="loginForm" th:action="@{/login}" method="post" class="mt-7 space-y-4" autocomplete="off" data-clear-on-load>
+                <label class="field-label">Email<input class="field-input" type="email" name="email" value="" autocomplete="off" autocapitalize="none" spellcheck="false" required></label>
+                <label class="field-label">Senha<input class="field-input" type="password" name="password" value="" autocomplete="new-password" required></label>
                 <button class="btn-primary w-full justify-center" type="submit">Entrar</button>
             </form>
             <p class="mt-6 text-center text-sm text-slate-400">

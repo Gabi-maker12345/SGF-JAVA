@@ -21,7 +21,7 @@ public class EmployeeService {
     private final DepartmentRepository departmentRepository;
 
     public List<EmployeeResponse> findAll() {
-        return employeeRepository.findAll().stream()
+        return employeeRepository.findAllActive().stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -50,11 +50,25 @@ public class EmployeeService {
         return toResponse(employeeRepository.save(employee));
     }
 
-   public void delete(Long id) {
-    Employee employee = findEmployee(id);
-    employee.setDeletedAt(java.time.LocalDateTime.now());
-    employeeRepository.save(employee);
-}
+    public void delete(Long id) {
+        Employee employee = findEmployee(id);
+        employee.setDeletedAt(java.time.LocalDateTime.now());
+        employeeRepository.save(employee);
+    }
+
+    public void restore(Long id) {
+        Employee employee = findEmployee(id);
+        employee.setDeletedAt(null);
+        employeeRepository.save(employee);
+    }
+
+    public void deletePermanently(Long id) {
+        Employee employee = findEmployee(id);
+        if (employee.getDeletedAt() == null) {
+            throw new IllegalArgumentException("Envie o funcionario para a lixeira antes de apagar definitivamente.");
+        }
+        employeeRepository.delete(employee);
+    }
 
     private Employee findEmployee(Long id) {
         return employeeRepository.findById(id)

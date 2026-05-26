@@ -2,9 +2,12 @@ package com.SI.Crud.funcionarios_SI.service;
 
 import com.SI.Crud.funcionarios_SI.exception.ResourceNotFoundException;
 import com.SI.Crud.funcionarios_SI.model.entity.Department;
+import com.SI.Crud.funcionarios_SI.model.entity.Employee;
 import com.SI.Crud.funcionarios_SI.repository.DepartmentRepository;
+import com.SI.Crud.funcionarios_SI.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -13,6 +16,7 @@ import java.util.List;
 public class DepartmentService {
 
     private final DepartmentRepository departmentRepository;
+    private final EmployeeRepository employeeRepository;
 
     public List<Department> findAll() {
         return departmentRepository.findAll();
@@ -44,5 +48,33 @@ public class DepartmentService {
 
     public void delete(Long id) {
         departmentRepository.delete(findById(id));
+    }
+
+    @Transactional
+    public Department transferEmployeesAndDelete(Long sourceDepartmentId, Long targetDepartmentId, Department newDepartment) {
+        Department sourceDepartment = findById(sourceDepartmentId);
+        Department targetDepartment = resolveTargetDepartment(sourceDepartmentId, targetDepartmentId, newDepartment);
+
+        List<Employee> employees = employeeRepository.findByDepartmentId(sourceDepartmentId);
+        employees.forEach(employee -> employee.setDepartment(targetDepartment));
+        employeeRepository.saveAll(employees);
+        departmentRepository.delete(sourceDepartment);
+
+        return targetDepartment;
+    }
+
+    private Department resolveTargetDepartment(Long sourceDepartmentId, Long targetDepartmentId, Department newDepartment) {
+        if (targetDepartmentId != null) {
+            if (targetDepartmentId.equals(sourceDepartmentId)) {
+                throw new IllegalArgumentException("Escolha um departamento diferente para receber os funcionarios.");
+            }
+            return findById(targetDepartmentId);
+        }
+
+        if (newDepartment == null || newDepartment.getName() == null || newDepartment.getName().isBlank()) {
+            throw new IllegalArgumentException("Escolha um departamento existente ou crie um novo para transferir os funcionarios.");
+        }
+
+        return create(newDepartment);
     }
 }

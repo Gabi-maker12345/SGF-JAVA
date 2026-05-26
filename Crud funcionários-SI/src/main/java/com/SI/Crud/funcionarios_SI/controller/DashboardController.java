@@ -5,11 +5,13 @@ import com.SI.Crud.funcionarios_SI.model.dto.request.RegisterRequest;
 import com.SI.Crud.funcionarios_SI.model.entity.Department;
 import com.SI.Crud.funcionarios_SI.model.entity.Employee;
 import com.SI.Crud.funcionarios_SI.model.entity.User;
+import com.SI.Crud.funcionarios_SI.model.enums.EmployeeStatus;
 import com.SI.Crud.funcionarios_SI.repository.DepartmentRepository;
 import com.SI.Crud.funcionarios_SI.repository.EmployeeRepository;
 import com.SI.Crud.funcionarios_SI.repository.UserRepository;
 import com.SI.Crud.funcionarios_SI.service.DepartmentService;
 import com.SI.Crud.funcionarios_SI.service.EmployeeService;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -34,6 +36,8 @@ import java.util.Locale;
 @RequiredArgsConstructor
 public class DashboardController {
 
+    private static final BigDecimal MINIMUM_SALARY = BigDecimal.valueOf(100000);
+
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
@@ -46,14 +50,17 @@ public class DashboardController {
         if (logout != null) {
             model.addAttribute("message", "Sessao terminada com sucesso.");
         }
-        model.addAttribute("totalEmployees", employeeRepository.count());
+        model.addAttribute("totalEmployees", employeeRepository.countByDeletedAtIsNull());
         model.addAttribute("departmentsCount", departmentRepository.count());
-        model.addAttribute("monthlyPayroll", formatCurrency(employeeRepository.sumSalary()));
+        model.addAttribute("monthlyPayroll", formatCurrency(employeeRepository.sumActiveSalary()));
         return "home";
     }
 
     @GetMapping("/login")
-    public String login(Model model, @RequestParam(value = "error", required = false) String error) {
+    public String login(Model model, @RequestParam(value = "error", required = false) String error, HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
         if (error != null) {
             model.addAttribute("message", "Email ou senha invalidos.");
             model.addAttribute("messageType", "error");
@@ -111,7 +118,10 @@ public class DashboardController {
             @ModelAttribute("message") String message,
             @ModelAttribute("messageType") String messageType
     ) {
-        List<Employee> employees = employeeRepository.findAllWithDepartment().stream()
+        List<Employee> employees = employeeRepository.findAllActiveWithDepartment().stream()
+                .sorted(Comparator.comparing(Employee::getName))
+                .toList();
+        List<Employee> trashEmployees = employeeRepository.findAllInTrashWithDepartment().stream()
                 .sorted(Comparator.comparing(Employee::getName))
                 .toList();
         List<DepartmentView> departmentViews = departmentRepository.findAll().stream()
@@ -120,6 +130,7 @@ public class DashboardController {
                         department.getId(),
                         department.getName(),
                         department.getDescription(),
+                        employeeRepository.countByDepartmentIdAndDeletedAtIsNull(department.getId()),
                         employeeRepository.countByDepartmentId(department.getId()),
                         0
                 ))
@@ -135,20 +146,23 @@ public class DashboardController {
                         department.name(),
                         department.description(),
                         department.employees(),
+                        department.linkedEmployees(),
                         maxDepartmentEmployees == 0 ? 0 : Math.round((department.employees() * 100.0) / maxDepartmentEmployees)
                 ))
                 .toList();
 
         model.addAttribute("employees", employees);
+        model.addAttribute("trashEmployees", trashEmployees);
         model.addAttribute("departments", departments);
         model.addAttribute("departmentOptions", departmentRepository.findAll().stream()
                 .sorted(Comparator.comparing(Department::getName))
                 .toList());
-        model.addAttribute("employeeRequest", new EmployeeRequest());
+        model.addAttribute("employeeRequest", defaultEmployeeRequest());
         model.addAttribute("department", new Department());
-        model.addAttribute("totalEmployees", employeeRepository.count());
+        model.addAttribute("totalEmployees", employeeRepository.countByDeletedAtIsNull());
+        model.addAttribute("trashEmployeesCount", trashEmployees.size());
         model.addAttribute("departmentsCount", departmentRepository.count());
-        model.addAttribute("monthlyPayroll", formatCurrency(employeeRepository.sumSalary()));
+        model.addAttribute("monthlyPayroll", formatCurrency(employeeRepository.sumActiveSalary()));
         model.addAttribute("averageSalary", formatAverageSalary());
         model.addAttribute("message", message);
         model.addAttribute("messageType", messageType);
@@ -212,6 +226,26 @@ public class DashboardController {
         }
     }
 
+    @PostMapping("/employees/{id}/restore")
+    public String restoreEmployee(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            employeeService.restore(id);
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", "Funcionario restaurado com sucesso.", "success");
+        } catch (IllegalArgumentException | DataIntegrityViolationException exception) {
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", friendlyDatabaseMessage(exception), "error");
+        }
+    }
+
+    @PostMapping("/employees/{id}/destroy")
+    public String destroyEmployee(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            employeeService.deletePermanently(id);
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", "Funcionario apagado definitivamente.", "success");
+        } catch (IllegalArgumentException | DataIntegrityViolationException exception) {
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", friendlyDatabaseMessage(exception), "error");
+        }
+    }
+
     @PostMapping("/departments")
     public String createDepartment(
             @Valid @ModelAttribute Department department,
@@ -262,12 +296,40 @@ public class DashboardController {
     @PostMapping("/departments/{id}/delete")
     public String deleteDepartment(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         if (employeeRepository.countByDepartmentId(id) > 0) {
-            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", "Nao e possivel apagar um departamento com funcionarios vinculados.", "error");
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", "Este departamento tem funcionarios cadastrados. Transfira-os para outro departamento ou crie um novo departamento para vincula-los automaticamente.", "error");
         }
 
         try {
             departmentService.delete(id);
-            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", "Departamento enviado para a lixeira.", "success");
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", "Departamento apagado com sucesso.", "success");
+        } catch (IllegalArgumentException | DataIntegrityViolationException exception) {
+            return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", friendlyDatabaseMessage(exception), "error");
+        }
+    }
+
+    @PostMapping("/departments/{id}/transfer-delete")
+    public String transferAndDeleteDepartment(
+            @PathVariable Long id,
+            @RequestParam(value = "targetDepartmentId", required = false) Long targetDepartmentId,
+            @RequestParam(value = "newDepartmentName", required = false) String newDepartmentName,
+            @RequestParam(value = "newDepartmentDescription", required = false) String newDepartmentDescription,
+            RedirectAttributes redirectAttributes
+    ) {
+        Department newDepartment = null;
+        if (targetDepartmentId == null) {
+            newDepartment = new Department();
+            newDepartment.setName(newDepartmentName);
+            newDepartment.setDescription(newDepartmentDescription);
+        }
+
+        try {
+            Department targetDepartment = departmentService.transferEmployeesAndDelete(id, targetDepartmentId, newDepartment);
+            return redirectWithMessage(
+                    redirectAttributes,
+                    "redirect:/dashboard#departments",
+                    "Funcionarios transferidos para " + targetDepartment.getName() + " e departamento apagado com sucesso.",
+                    "success"
+            );
         } catch (IllegalArgumentException | DataIntegrityViolationException exception) {
             return redirectWithMessage(redirectAttributes, "redirect:/dashboard#departments", friendlyDatabaseMessage(exception), "error");
         }
@@ -304,11 +366,11 @@ public class DashboardController {
     }
 
     private String formatAverageSalary() {
-        long totalEmployees = employeeRepository.count();
+        long totalEmployees = employeeRepository.countByDeletedAtIsNull();
         if (totalEmployees == 0) {
             return formatCurrency(BigDecimal.ZERO);
         }
-        return formatCurrency(employeeRepository.sumSalary().divide(BigDecimal.valueOf(totalEmployees), 0, java.math.RoundingMode.HALF_UP));
+        return formatCurrency(employeeRepository.sumActiveSalary().divide(BigDecimal.valueOf(totalEmployees), 0, java.math.RoundingMode.HALF_UP));
     }
 
     private String formatCurrency(BigDecimal value) {
@@ -318,11 +380,19 @@ public class DashboardController {
         return formatter.format(value == null ? BigDecimal.ZERO : value) + " Kz";
     }
 
+    private EmployeeRequest defaultEmployeeRequest() {
+        EmployeeRequest request = new EmployeeRequest();
+        request.setSalary(MINIMUM_SALARY);
+        request.setStatus(EmployeeStatus.ATIVO);
+        return request;
+    }
+
     public record DepartmentView(
             Long id,
             String name,
             String description,
             long employees,
+            long linkedEmployees,
             long percentage
     ) {
     }

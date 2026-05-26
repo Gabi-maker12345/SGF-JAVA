@@ -5,6 +5,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -21,6 +22,7 @@ public class EmployeeRequest {
     @NotBlank(message = "O email e obrigatorio")
     private String email;
 
+    @Pattern(regexp = "^(\\+244\\d{9})?$", message = "O telefone deve seguir o formato angolano +244000000000")
     private String phone;
 
     private EmployeeStatus status;
@@ -29,8 +31,8 @@ public class EmployeeRequest {
     private String position;
 
     @NotNull(message = "O salario e obrigatorio")
-    @DecimalMin(value = "0.0", inclusive = false, message = "O salario deve ser maior que zero")
-    private BigDecimal salary;
+    @DecimalMin(value = "100000.00", inclusive = true, message = "O salário mínimo angolano é 100.000kzs, insira valores apartir disso")
+    private BigDecimal salary = new BigDecimal("100000.00");
 
     @NotNull(message = "O departamento e obrigatorio")
     private Long departmentId;
