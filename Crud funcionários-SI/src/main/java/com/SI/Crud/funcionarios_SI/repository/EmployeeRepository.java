@@ -16,4 +16,12 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     @Query("select coalesce(sum(e.salary), 0) from Employee e")
     BigDecimal sumSalary();
+
+    // NOVO — lixeira
+    @Query("select e from Employee e where e.deletedAt is not null")
+    List<Employee> findAllInTrash();
+
+    // NOVO — ativos (excluir os que estão na lixeira)
+    @Query("select e from Employee e where e.deletedAt is null")
+    List<Employee> findAllActive();
 }

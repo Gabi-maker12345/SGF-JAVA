@@ -42,10 +42,11 @@ public class EmployeeService {
         return toResponse(employeeRepository.save(employee));
     }
 
-    public void delete(Long id) {
-        Employee employee = findEmployee(id);
-        employeeRepository.delete(employee);
-    }
+   public void delete(Long id) {
+    Employee employee = findEmployee(id);
+    employee.setDeletedAt(java.time.LocalDateTime.now());
+    employeeRepository.save(employee);
+}
 
     private Employee findEmployee(Long id) {
         return employeeRepository.findById(id)
