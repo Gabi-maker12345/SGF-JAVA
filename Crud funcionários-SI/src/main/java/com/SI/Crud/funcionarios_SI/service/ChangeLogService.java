@@ -40,6 +40,19 @@ public class ChangeLogService {
                 .stream().map(this::toResponse).toList();
     }
 
+    // NOVO — filtrar por período de tempo
+    public List<ChangeLogResponse> findByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+        return changeLogRepository.findByChangedAtBetweenOrderByChangedAtDesc(startDate, endDate)
+                .stream().map(this::toResponse).toList();
+    }
+
+    // NOVO — últimos N dias
+    public List<ChangeLogResponse> findLastDays(int days) {
+        LocalDateTime startDate = LocalDateTime.now().minusDays(days);
+        LocalDateTime endDate = LocalDateTime.now();
+        return findByDateRange(startDate, endDate);
+    }
+
     private ChangeLogResponse toResponse(ChangeLog log) {
         return ChangeLogResponse.builder()
                 .id(log.getId())

@@ -11,7 +11,6 @@ import java.util.List;
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     long countByDepartmentId(Long departmentId);
-    long countByDeletedAtIsNull();
 
     @Query("select e from Employee e join fetch e.department")
     List<Employee> findAllWithDepartment();
@@ -19,18 +18,9 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     @Query("select coalesce(sum(e.salary), 0) from Employee e")
     BigDecimal sumSalary();
 
-    // NOVO — lixeira
-   @Query("select e from Employee e left join fetch e.department where e.deletedAt is not null")
-List<Employee> findAllInTrash();
-
-    // NOVO — ativos (excluir os que estão na lixeira)
-   @Query("select e from Employee e left join fetch e.department where e.deletedAt is null")
-   List<Employee> findAllActive();
-
     @Query("""
     select e from Employee e
-    where e.deletedAt is null
-    and (:name is null or lower(e.name) like lower(concat('%', :name, '%')))
+    where (:name is null or lower(e.name) like lower(concat('%', :name, '%')))
     and (:position is null or lower(e.position) like lower(concat('%', :position, '%')))
     and (:departmentId is null or e.department.id = :departmentId)
     and (:status is null or e.status = :status)
@@ -45,23 +35,23 @@ List<Employee> findWithFilters(
     @Param("salaryMin") BigDecimal salaryMin,
     @Param("salaryMax") BigDecimal salaryMax
 );
-    // NOVO — dashboard analítico
-@Query("select e.department.name, sum(e.salary), count(e), avg(e.salary) from Employee e where e.deletedAt is null group by e.department.name")
+
+@Query("select e.department.name, sum(e.salary), count(e), avg(e.salary) from Employee e group by e.department.name")
 List<Object[]> salaryByDepartment();
 
-@Query("select e.position, count(e) from Employee e where e.deletedAt is null group by e.position")
+@Query("select e.position, count(e) from Employee e group by e.position")
 List<Object[]> countByPosition();
 
-@Query("select e.status, count(e) from Employee e where e.deletedAt is null group by e.status")
+@Query("select e.status, count(e) from Employee e group by e.status")
 List<Object[]> countByStatus();
 
-@Query("select coalesce(sum(e.salary), 0) from Employee e where e.deletedAt is null")
+@Query("select coalesce(sum(e.salary), 0) from Employee e")
 BigDecimal sumActiveSalary();
 
-@Query("select coalesce(avg(e.salary), 0) from Employee e where e.deletedAt is null")
+@Query("select coalesce(avg(e.salary), 0) from Employee e")
 BigDecimal avgActiveSalary();
 
-@Query("select e from Employee e join fetch e.department where e.deletedAt is null")
+@Query("select e from Employee e join fetch e.department")
 List<Employee> findAllWithDepartmentActive();
 
 @Query("select e from Employee e left join fetch e.department where e.id = :id")

@@ -12,10 +12,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
+@Transactional(readOnly = true)
 @Service
 @RequiredArgsConstructor
 public class EmployeeService {
@@ -25,28 +26,29 @@ public class EmployeeService {
     private final ChangeLogService changeLogService;
 
     public List<EmployeeResponse> findAll() {
-    return employeeRepository.findAllWithDepartmentActive()
-            .stream()
-            .map(this::toResponse)
-            .toList();
-}
+        return employeeRepository.findAllWithDepartmentActive()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
 
     public EmployeeResponse findById(Long id) {
         return toResponse(findEmployee(id));
     }
 
+    @Transactional
     public EmployeeResponse create(EmployeeRequest request) {
         Employee employee = new Employee();
         fillEmployee(employee, request);
         return toResponse(employeeRepository.save(employee));
     }
 
+    @Transactional
     public EmployeeResponse update(Long id, EmployeeRequest request) {
         Employee employee = findEmployee(id);
 
         String currentUser = getCurrentUserEmail();
 
-        // registar alteração de salário
         if (request.getSalary() != null &&
             !request.getSalary().equals(employee.getSalary())) {
             changeLogService.record(
@@ -58,7 +60,6 @@ public class EmployeeService {
             );
         }
 
-        // registar alteração de cargo
         if (request.getPosition() != null &&
             !request.getPosition().equals(employee.getPosition())) {
             changeLogService.record(
@@ -70,15 +71,20 @@ public class EmployeeService {
             );
         }
 
-        // registar alteração de departamento
         if (request.getDepartmentId() != null &&
             (employee.getDepartment() == null ||
              !request.getDepartmentId().equals(employee.getDepartment().getId()))) {
+
+            // ← CORRIGIDO: busca o nome do novo departamento em vez de guardar o ID
+            String newDeptName = departmentRepository.findById(request.getDepartmentId())
+                    .map(Department::getName)
+                    .orElse(String.valueOf(request.getDepartmentId()));
+
             changeLogService.record(
                 employee.getId(), employee.getName(),
                 "departamento",
                 employee.getDepartment() != null ? employee.getDepartment().getName() : null,
-                String.valueOf(request.getDepartmentId()),
+                newDeptName,
                 currentUser, request.getReason()
             );
         }
@@ -87,11 +93,13 @@ public class EmployeeService {
         return toResponse(employeeRepository.save(employee));
     }
 
+    @Transactional
     public void delete(Long id) {
         Employee employee = findEmployee(id);
-        employee.setDeletedAt(LocalDateTime.now());
-        employeeRepository.save(employee);
+        employeeRepository.delete(employee);
     }
+
+    // ─── métodos privados ───────────────────────────────────────────────────
 
     private String getCurrentUserEmail() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -101,12 +109,11 @@ public class EmployeeService {
         return "sistema";
     }
 
-   // DEPOIS:
-private Employee findEmployee(Long id) {
-    return employeeRepository.findByIdWithDepartment(id)
-            .orElseThrow(() -> new ResourceNotFoundException(
-                "Funcionario nao encontrado com id: " + id));
-}
+    private Employee findEmployee(Long id) {
+        return employeeRepository.findByIdWithDepartment(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Funcionario nao encontrado com id: " + id));
+    }
 
     private void fillEmployee(Employee employee, EmployeeRequest request) {
         Department department = departmentRepository.findById(request.getDepartmentId())
@@ -136,5 +143,4 @@ private Employee findEmployee(Long id) {
                 .status(employee.getStatus())
                 .build();
     }
-   
 }

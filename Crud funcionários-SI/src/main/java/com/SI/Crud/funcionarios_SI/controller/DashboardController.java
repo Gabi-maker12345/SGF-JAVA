@@ -22,9 +22,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import com.SI.Crud.funcionarios_SI.model.entity.ChangeLog;
 import com.SI.Crud.funcionarios_SI.repository.ChangeLogRepository;
-import com.SI.Crud.funcionarios_SI.service.TrashService;
+import com.SI.Crud.funcionarios_SI.model.entity.ChangeLog;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -43,7 +42,6 @@ public class DashboardController {
     private final DepartmentService departmentService;
     private final PasswordEncoder passwordEncoder;
     private final ChangeLogRepository changeLogRepository;
-    private final TrashService trashService;
 
 
     @GetMapping("/")
@@ -51,7 +49,7 @@ public class DashboardController {
         if (logout != null) {
             model.addAttribute("message", "Sessao terminada com sucesso.");
         }
-       model.addAttribute("totalEmployees", employeeRepository.countByDeletedAtIsNull());
+       model.addAttribute("totalEmployees", employeeRepository.count());
         model.addAttribute("departmentsCount", departmentRepository.count());
         model.addAttribute("monthlyPayroll", formatCurrency(employeeRepository.sumSalary()));
         return "home";
@@ -145,27 +143,17 @@ public class DashboardController {
         model.addAttribute("department", new Department());
         model.addAttribute("totalEmployees", employeeRepository.count());
         model.addAttribute("departmentsCount", departmentRepository.count());
-        model.addAttribute("monthlyPayroll", formatCurrency(employeeRepository.sumSalary()));
+        model.addAttribute("monthlyPayroll", formatCurrency(employeeRepository.sumActiveSalary()));
         model.addAttribute("averageSalary", formatAverageSalary());
         model.addAttribute("message", message);
-        model.addAttribute("trashedEmployees", employeeRepository.findAllInTrash());
-model.addAttribute("changeLogs", changeLogRepository.findAllByOrderByChangedAtDesc());
+        
+        // NOVO — histórico com filtro de dias
+        List<ChangeLog> changeLogs = changeLogRepository.findAllByOrderByChangedAtDesc();
+        model.addAttribute("changeLogs", changeLogs);
+        model.addAttribute("allChangeLogs", changeLogs);
+        model.addAttribute("lastDayChanges", 7); // padrão últimos 7 dias
         return "dashboard";
     }
-
-    @PostMapping("/trash/employees/{id}/restore")
-public String restoreEmployee(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-    trashService.restore(id);
-    redirectAttributes.addFlashAttribute("message", "Funcionario restaurado com sucesso.");
-    return "redirect:/dashboard#trash";
-}
-
-@PostMapping("/trash/employees/{id}/delete")
-public String deletePermanently(@PathVariable Long id, RedirectAttributes redirectAttributes) {
-    trashService.deletePermanently(id);
-    redirectAttributes.addFlashAttribute("message", "Funcionario excluido permanentemente.");
-    return "redirect:/dashboard#trash";
-}
 
     @PostMapping("/employees")
     public String createEmployee(
@@ -253,12 +241,13 @@ public String deletePermanently(@PathVariable Long id, RedirectAttributes redire
     }
 
     private String formatAverageSalary() {
-        long totalEmployees = employeeRepository.count();
-        if (totalEmployees == 0) {
-            return formatCurrency(BigDecimal.ZERO);
-        }
-        return formatCurrency(employeeRepository.sumSalary().divide(BigDecimal.valueOf(totalEmployees), 0, java.math.RoundingMode.HALF_UP));
+    long totalEmployees = employeeRepository.count();
+    if (totalEmployees == 0) {
+        return formatCurrency(BigDecimal.ZERO);
     }
+    return formatCurrency(employeeRepository.sumActiveSalary()
+            .divide(BigDecimal.valueOf(totalEmployees), 0, java.math.RoundingMode.HALF_UP));
+}
 
     private String formatCurrency(BigDecimal value) {
         NumberFormat formatter = NumberFormat.getNumberInstance(new Locale("pt", "AO"));

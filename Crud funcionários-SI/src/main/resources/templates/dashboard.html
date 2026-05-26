@@ -48,7 +48,6 @@
             <button type="button" class="nav-link active" data-section-target="overview" data-title="Gestao de Funcionarios" data-subtitle="Organize pessoas, departamentos e custos num ambiente seguro."><i data-lucide="layout-dashboard"></i><span>Visao geral</span></button>
             <button type="button" class="nav-link" data-section-target="employees" data-title="Funcionarios" data-subtitle="Consulte, crie e edite todos os funcionarios cadastrados."><i data-lucide="users-round"></i><span>Funcionarios</span></button>
             <button type="button" class="nav-link" data-section-target="departments" data-title="Departamentos" data-subtitle="Gerencie os departamentos e acompanhe a distribuicao das equipas."><i data-lucide="network"></i><span>Departamentos</span></button>
-            <button type="button" class="nav-link" data-section-target="trash" data-title="Lixeira" data-subtitle="Funcionarios removidos. Restaure ou exclua permanentemente."><i data-lucide="trash-2"></i><span>Lixeira</span></button>
             <button type="button" class="nav-link" data-section-target="history" data-title="Historico" data-subtitle="Registo de todas as alteracoes feitas aos funcionarios."><i data-lucide="clock"></i><span>Historico</span></button>
         </nav>
 
@@ -180,9 +179,6 @@
                                     <button type="button" class="action-button remove" th:attr="data-open-modal='deleteEmployeeModal-' + ${employee.id}" aria-label="Excluir funcionario">
                                         <i data-lucide="circle-x"></i>
                                     </button>
-                                    <button type="button" class="action-button danger" th:attr="data-open-modal='deleteEmployeeModal-' + ${employee.id}" aria-label="Enviar funcionario para a lixeira">
-                                        <i data-lucide="trash-2"></i>
-                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -237,9 +233,6 @@
                                     <button type="button" class="action-button remove" th:attr="data-open-modal='deleteDepartmentModal-' + ${department.id()}" aria-label="Excluir departamento">
                                         <i data-lucide="circle-x"></i>
                                     </button>
-                                    <button type="button" class="action-button danger" th:attr="data-open-modal='deleteDepartmentModal-' + ${department.id()}" aria-label="Enviar departamento para a lixeira">
-                                        <i data-lucide="trash-2"></i>
-                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -248,22 +241,7 @@
                 </div>
             </article>
         </section>
-        <section id="trash" class="dashboard-section" data-view-section>
-    <article class="glass-card table-panel reveal-up">
-        <div class="panel-heading">
-            <div>
-                <span class="premium-kicker">Lixeira</span>
-                <h2>Funcionarios removidos</h2>
-            </div>
-        </div>
-        <div id="trashContent">
-            <div class="empty-state">
-                <span class="metric-icon orange"><i data-lucide="trash-2"></i></span>
-                <p>A carregar lixeira...</p>
-            </div>
-        </div>
-    </article>
-</section>
+
 <section id="history" class="dashboard-section" data-view-section>
     <article class="glass-card table-panel reveal-up">
         <div class="panel-heading">
@@ -271,13 +249,104 @@
                 <span class="premium-kicker">Auditoria</span>
                 <h2>Historico de alteracoes</h2>
             </div>
-        </div>
-        <div id="historyContent">
-            <div class="empty-state">
-                <span class="metric-icon violet"><i data-lucide="clock"></i></span>
-                <p>A carregar historico...</p>
+            <div class="filter-controls">
+                <select id="dateFilterSelect" class="field-input"
+                        style="width: 180px; padding: 8px 12px; border-radius: 6px; font-size: 0.9rem;"
+                        onchange="filterChangelogs(this.value)">
+                    <option value="7">Ultimos 7 dias</option>
+                    <option value="30">Ultimos 30 dias</option>
+                    <option value="90">Ultimos 90 dias</option>
+                    <option value="all">Todos os registos</option>
+                </select>
             </div>
         </div>
+
+        <!-- estado vazio (sem registos de todo) -->
+        <div class="empty-state" th:if="${#lists.isEmpty(changeLogs)}" id="historyEmptyState">
+            <span class="metric-icon violet"><i data-lucide="clock"></i></span>
+            <p>Sem alteracoes registadas.</p>
+            <small>As alteracoes de salario, cargo e departamento aparecem aqui.</small>
+        </div>
+
+        <!-- mensagem "nenhum resultado no filtro" (escondida inicialmente) -->
+        <div id="historyFilterEmpty"
+             style="display:none; text-align:center; padding: 2rem 1rem; color: #888;">
+            <i data-lucide="search-x" style="width:32px;height:32px;margin:0 auto 0.5rem;display:block;"></i>
+            <p>Nenhuma alteracao no periodo seleccionado.</p>
+        </div>
+
+        <div class="changelog-list"
+             th:if="${!#lists.isEmpty(changeLogs)}"
+             id="changelogContainer">
+
+            <div class="changelog-item"
+                 th:each="log : ${changeLogs}"
+                 th:id="'log-' + ${log.id}"
+                 th:attr="data-changed-at=${#temporals.format(log.changedAt, 'yyyy-MM-dd''T''HH:mm:ss')}">
+
+                <!-- cabeçalho clicável -->
+                <div class="changelog-header" onclick="toggleChangelogItem(this)">
+                    <div class="changelog-summary">
+                        <!-- badge por tipo de campo -->
+                        <span class="status-badge"
+                              th:classappend="${log.field == 'salario'} ? 'green' :
+                                             (${log.field == 'cargo'}  ? 'blue'  : 'violet')"
+                              th:text="${log.field}">campo</span>
+
+                        <strong th:text="${log.employeeName}">Nome</strong>
+
+                        <small style="color:#94a3b8;">
+                            em <span th:text="${#temporals.format(log.changedAt, 'dd/MM/yyyy HH:mm')}">data</span>
+                        </small>
+                    </div>
+                    <!-- ícone roda quando aberto -->
+                    <i data-lucide="chevron-down"
+                       class="changelog-toggle"
+                       style="width:18px;height:18px;transition:transform .25s;flex-shrink:0;"></i>
+                </div>
+
+                <!-- detalhes (fechados por padrão) -->
+                <div class="changelog-details" style="display:none; padding: 0.75rem 1rem 1rem;">
+                    <div class="details-grid">
+                        <div class="detail-row">
+                            <span class="detail-label">Funcionario:</span>
+                            <span class="detail-value" th:text="${log.employeeName}">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Campo alterado:</span>
+                            <span class="detail-value"
+                                  th:text="${log.field == 'salario'} ? 'Salario' :
+                                           (${log.field == 'cargo'}  ? 'Cargo'   : 'Departamento')">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Valor anterior:</span>
+                            <span class="detail-value old-value"
+                                  th:text="${log.oldValue != null ? log.oldValue : 'N/A'}">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Novo valor:</span>
+                            <span class="detail-value new-value"
+                                  th:text="${log.newValue != null ? log.newValue : 'N/A'}">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Alterado por:</span>
+                            <span class="detail-value"
+                                  th:text="${log.changedBy != null ? log.changedBy : 'Sistema'}">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Motivo:</span>
+                            <span class="detail-value"
+                                  th:text="${log.reason != null and !#strings.isEmpty(log.reason)} ? ${log.reason} : 'Sem motivo registado'">-</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Data/Hora:</span>
+                            <span class="detail-value"
+                                  th:text="${#temporals.format(log.changedAt, 'dd/MM/yyyy HH:mm:ss')}">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div><!-- fim .changelog-item -->
+        </div><!-- fim #changelogContainer -->
     </article>
 </section>
     </main>
@@ -348,11 +417,11 @@
     <div class="modal-card">
         <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
         <div class="modal-symbol danger"><i data-lucide="trash-2"></i></div>
-        <h3 class="modal-title">Enviar funcionario para a lixeira?</h3>
-        <p class="modal-copy">Esta accao remove o registo de <strong th:text="${employee.name}">funcionario</strong> da lista de funcionarios.</p>
+        <h3 class="modal-title">Excluir funcionario?</h3>
+        <p class="modal-copy">Esta accao remove o registo de <strong th:text="${employee.name}">funcionario</strong> da lista de funcionarios permanentemente. Esta accao nao pode ser desfeita.</p>
         <form th:action="@{/employees/{id}/delete(id=${employee.id})}" method="post" class="modal-actions">
             <button type="button" class="btn-secondary" data-close-modal>Cancelar</button>
-            <button type="submit" class="btn-danger"><i data-lucide="trash-2"></i>Apagar</button>
+            <button type="submit" class="btn-danger"><i data-lucide="trash-2"></i>Excluir permanentemente</button>
         </form>
     </div>
 </section>
@@ -387,13 +456,13 @@
     <div class="modal-card">
         <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
         <div class="modal-symbol danger"><i data-lucide="trash-2"></i></div>
-        <h3 class="modal-title">Enviar departamento para a lixeira?</h3>
+        <h3 class="modal-title">Excluir departamento?</h3>
         <p class="modal-copy">
-            O departamento <strong th:text="${departmentItem.name()}">departamento</strong> so pode ser apagado se nao tiver funcionarios vinculados.
+            O departamento <strong th:text="${departmentItem.name()}">departamento</strong> será excluído permanentemente. Esta ação não pode ser desfeita. Certifique-se de que não há funcionarios vinculados.
         </p>
         <form th:action="@{/departments/{id}/delete(id=${departmentItem.id()})}" method="post" class="modal-actions">
             <button type="button" class="btn-secondary" data-close-modal>Cancelar</button>
-            <button type="submit" class="btn-danger"><i data-lucide="trash-2"></i>Apagar</button>
+            <button type="submit" class="btn-danger"><i data-lucide="trash-2"></i>Excluir permanentemente</button>
         </form>
     </div>
 </section>

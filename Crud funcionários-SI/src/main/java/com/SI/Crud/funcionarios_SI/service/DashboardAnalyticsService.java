@@ -49,7 +49,7 @@ public class DashboardAnalyticsService {
                 }).toList();
 
         return DashboardStatsResponse.builder()
-                .totalEmployees(employeeRepository.countByDeletedAtIsNull())
+                .totalEmployees(employeeRepository.count())
                 .totalDepartments(departmentRepository.count())
                 .totalPayroll(employeeRepository.sumActiveSalary())
                 .averageSalary(employeeRepository.avgActiveSalary())

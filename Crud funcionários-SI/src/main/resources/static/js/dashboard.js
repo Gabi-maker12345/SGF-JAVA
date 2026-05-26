@@ -206,4 +206,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
     fitMonetaryText();
     refreshIcons();
+
+    /* ─── Histórico: accordion (só um aberto de cada vez) ─── */
+function toggleChangelogItem(header) {
+    const clickedItem   = header.closest('.changelog-item');
+    const clickedDetail = clickedItem.querySelector('.changelog-details');
+    const clickedIcon   = header.querySelector('.changelog-toggle');
+    const isOpen        = clickedDetail.style.display === 'block';
+
+    // fecha todos
+    document.querySelectorAll('.changelog-item').forEach(item => {
+        item.querySelector('.changelog-details').style.display = 'none';
+        const icon = item.querySelector('.changelog-toggle');
+        if (icon) icon.style.transform = 'rotate(0deg)';
+        item.classList.remove('is-open');
+    });
+
+    // abre só o clicado (se estava fechado)
+    if (!isOpen) {
+        clickedDetail.style.display = 'block';
+        if (clickedIcon) clickedIcon.style.transform = 'rotate(180deg)';
+        clickedItem.classList.add('is-open');
+    }
+}
+
+/* ─── Histórico: filtro por período ─── */
+function filterChangelogs(value) {
+    const container    = document.getElementById('changelogContainer');
+    const emptyFilter  = document.getElementById('historyFilterEmpty');
+    if (!container) return;
+
+    const items  = container.querySelectorAll('.changelog-item');
+    const cutoff = value === 'all'
+        ? null
+        : new Date(Date.now() - Number(value) * 24 * 60 * 60 * 1000);
+
+    let visible = 0;
+    items.forEach(item => {
+        const raw  = item.getAttribute('data-changed-at'); // "2025-06-01T14:30:00"
+        const date = raw ? new Date(raw) : null;
+        const show = !cutoff || (date && date >= cutoff);
+        item.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+
+    // fecha qualquer item aberto que ficou oculto
+    document.querySelectorAll('.changelog-item[style*="display: none"] .changelog-details')
+        .forEach(d => { d.style.display = 'none'; });
+
+    emptyFilter && (emptyFilter.style.display = visible === 0 ? 'block' : 'none');
+}
 });
