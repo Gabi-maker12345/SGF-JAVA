@@ -1,5 +1,8 @@
 package com.SI.Crud.funcionarios_SI.model.entity;
 
+import com.SI.Crud.funcionarios_SI.model.enums.EmployeeStatus;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -11,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
+
 
 import java.math.BigDecimal;
 
@@ -41,4 +45,10 @@ public class Employee {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EmployeeStatus status = EmployeeStatus.ATIVO;
+
+    
 }

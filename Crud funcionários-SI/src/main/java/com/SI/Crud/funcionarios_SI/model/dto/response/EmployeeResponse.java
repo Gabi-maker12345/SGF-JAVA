@@ -1,5 +1,6 @@
 package com.SI.Crud.funcionarios_SI.model.dto.response;
 
+import com.SI.Crud.funcionarios_SI.model.enums.EmployeeStatus;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,4 +20,5 @@ public class EmployeeResponse {
     private BigDecimal salary;
     private Long departmentId;
     private String departmentName;
+    private EmployeeStatus status;
 }
