@@ -48,6 +48,8 @@
             <button type="button" class="nav-link active" data-section-target="overview" data-title="Gestao de Funcionarios" data-subtitle="Organize pessoas, departamentos e custos num ambiente seguro."><i data-lucide="layout-dashboard"></i><span>Visao geral</span></button>
             <button type="button" class="nav-link" data-section-target="employees" data-title="Funcionarios" data-subtitle="Consulte, crie e edite todos os funcionarios cadastrados."><i data-lucide="users-round"></i><span>Funcionarios</span></button>
             <button type="button" class="nav-link" data-section-target="departments" data-title="Departamentos" data-subtitle="Gerencie os departamentos e acompanhe a distribuicao das equipas."><i data-lucide="network"></i><span>Departamentos</span></button>
+            <button type="button" class="nav-link" data-section-target="trash" data-title="Lixeira" data-subtitle="Funcionarios removidos. Restaure ou exclua permanentemente."><i data-lucide="trash-2"></i><span>Lixeira</span></button>
+            <button type="button" class="nav-link" data-section-target="history" data-title="Historico" data-subtitle="Registo de todas as alteracoes feitas aos funcionarios."><i data-lucide="clock"></i><span>Historico</span></button>
         </nav>
 
         <div class="sidebar-insight">
@@ -136,12 +138,13 @@
                     <table class="premium-table">
                         <thead>
                         <tr>
-                            <th>Funcionario</th>
+                           <th>Funcionario</th>
                             <th>Departamento</th>
                             <th>Cargo</th>
-                            <th>Contacto</th>
-                            <th>Salario</th>
-                            <th>Acoes</th>
+                                <th>Contacto</th>
+                                <th>Salario</th>
+                                <th>Status</th>
+                                 <th>Acoes</th>
                         </tr>
                         </thead>
                         <tbody id="employeeRows">
@@ -159,6 +162,16 @@
                             <td th:text="${employee.position}">Cargo</td>
                             <td th:text="${employee.phone == null || employee.phone.isBlank() ? 'Sem telefone' : employee.phone}">Telefone</td>
                             <td class="salary-cell" th:text="${#numbers.formatDecimal(employee.salary, 0, 'POINT', 0, 'COMMA')} + ' Kz'">0 Kz</td>
+                            <td>
+                <span class="status-badge"
+                           th:classappend="${employee.status != null and employee.status.name() == 'ATIVO'} ? 'green' :
+                          (${employee.status != null and employee.status.name() == 'FERIAS'} ? 'blue' :
+                          (${employee.status != null and employee.status.name() == 'AFASTADO'} ? 'orange' :
+                              (${employee.status != null and employee.status.name() == 'DESLIGADO'} ? 'red' : 'violet')))"
+                                          th:text="${employee.status != null ? employee.status.name() : 'ATIVO'}">
+                                                 ATIVO
+                                </span>
+                                 </td>
                             <td>
                                 <div class="row-actions">
                                     <button type="button" class="action-button edit" th:attr="data-open-modal='editEmployeeModal-' + ${employee.id}" aria-label="Editar funcionario">
@@ -235,6 +248,38 @@
                 </div>
             </article>
         </section>
+        <section id="trash" class="dashboard-section" data-view-section>
+    <article class="glass-card table-panel reveal-up">
+        <div class="panel-heading">
+            <div>
+                <span class="premium-kicker">Lixeira</span>
+                <h2>Funcionarios removidos</h2>
+            </div>
+        </div>
+        <div id="trashContent">
+            <div class="empty-state">
+                <span class="metric-icon orange"><i data-lucide="trash-2"></i></span>
+                <p>A carregar lixeira...</p>
+            </div>
+        </div>
+    </article>
+</section>
+<section id="history" class="dashboard-section" data-view-section>
+    <article class="glass-card table-panel reveal-up">
+        <div class="panel-heading">
+            <div>
+                <span class="premium-kicker">Auditoria</span>
+                <h2>Historico de alteracoes</h2>
+            </div>
+        </div>
+        <div id="historyContent">
+            <div class="empty-state">
+                <span class="metric-icon violet"><i data-lucide="clock"></i></span>
+                <p>A carregar historico...</p>
+            </div>
+        </div>
+    </article>
+</section>
     </main>
 </div>
 
@@ -249,6 +294,15 @@
             <label class="field-label">Telefone<input class="field-input" th:field="*{phone}"></label>
             <label class="field-label">Cargo<input class="field-input" th:field="*{position}" required></label>
             <label class="field-label">Salario<input class="field-input" type="number" min="1" step="0.01" th:field="*{salary}" required></label>
+            <label class="field-label">Status
+            <select class="field-input" th:field="*{status}">
+             <option value="ATIVO">Ativo</option>
+                 <option value="FERIAS">Ferias</option>
+                     <option value="AFASTADO">Afastado</option>
+                    <option value="DESLIGADO">Desligado</option>
+                    <option value="EXPERIENCIA">Em experiencia</option>
+                        </select>
+                 </label>
             <label class="field-label">Departamento
                 <select class="field-input" th:field="*{departmentId}" required>
                     <option value="">Selecione</option>
@@ -271,6 +325,15 @@
             <label class="field-label">Telefone<input class="field-input" name="phone" th:value="${employee.phone}"></label>
             <label class="field-label">Cargo<input class="field-input" name="position" th:value="${employee.position}" required></label>
             <label class="field-label">Salario<input class="field-input" type="number" min="1" step="0.01" name="salary" th:value="${employee.salary}" required></label>
+            <label class="field-label">Status
+    <select class="field-input" name="status">
+        <option value="ATIVO" th:selected="${employee.status != null and employee.status.name() == 'ATIVO'}">Ativo</option>
+        <option value="FERIAS" th:selected="${employee.status != null and employee.status.name() == 'FERIAS'}">Ferias</option>
+        <option value="AFASTADO" th:selected="${employee.status != null and employee.status.name() == 'AFASTADO'}">Afastado</option>
+        <option value="DESLIGADO" th:selected="${employee.status != null and employee.status.name() == 'DESLIGADO'}">Desligado</option>
+        <option value="EXPERIENCIA" th:selected="${employee.status != null and employee.status.name() == 'EXPERIENCIA'}">Em experiencia</option>
+                        </select>
+            </label>
             <label class="field-label">Departamento
                 <select class="field-input" name="departmentId" required>
                     <option th:each="departmentOption : ${departmentOptions}" th:value="${departmentOption.id}" th:selected="${departmentOption.id == employee.department.id}" th:text="${departmentOption.name}"></option>
@@ -343,5 +406,6 @@
         <p id="messageText" class="modal-copy"></p>
     </div>
 </section>
+
 </body>
 </html>

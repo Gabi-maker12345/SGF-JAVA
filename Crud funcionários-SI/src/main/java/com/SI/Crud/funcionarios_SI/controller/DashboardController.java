@@ -22,6 +22,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.SI.Crud.funcionarios_SI.model.entity.ChangeLog;
+import com.SI.Crud.funcionarios_SI.repository.ChangeLogRepository;
+import com.SI.Crud.funcionarios_SI.service.TrashService;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
@@ -39,13 +42,16 @@ public class DashboardController {
     private final EmployeeService employeeService;
     private final DepartmentService departmentService;
     private final PasswordEncoder passwordEncoder;
+    private final ChangeLogRepository changeLogRepository;
+    private final TrashService trashService;
+
 
     @GetMapping("/")
     public String home(Model model, @RequestParam(value = "logout", required = false) String logout) {
         if (logout != null) {
             model.addAttribute("message", "Sessao terminada com sucesso.");
         }
-        model.addAttribute("totalEmployees", employeeRepository.count());
+       model.addAttribute("totalEmployees", employeeRepository.countByDeletedAtIsNull());
         model.addAttribute("departmentsCount", departmentRepository.count());
         model.addAttribute("monthlyPayroll", formatCurrency(employeeRepository.sumSalary()));
         return "home";
@@ -85,12 +91,15 @@ public class DashboardController {
             return "register";
         }
 
+       
+        boolean isFirst = userRepository.count() == 0;
+
         User user = User.builder()
-                .name(request.getName())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role("ROLE_USER")
-                .build();
+        .name(request.getName())
+        .email(request.getEmail())
+        .password(passwordEncoder.encode(request.getPassword()))
+        .role(isFirst ? "ROLE_ADMIN" : "ROLE_USUARIO")
+        .build();
         userRepository.save(user);
 
         redirectAttributes.addFlashAttribute("message", "Conta criada. Entre para continuar.");
@@ -99,7 +108,7 @@ public class DashboardController {
 
     @GetMapping("/dashboard")
     public String dashboard(Model model, @ModelAttribute("message") String message) {
-        List<Employee> employees = employeeRepository.findAllWithDepartment().stream()
+      List<Employee> employees = employeeRepository.findAllWithDepartmentActive().stream()
                 .sorted(Comparator.comparing(Employee::getName))
                 .toList();
         List<DepartmentView> departmentViews = departmentRepository.findAll().stream()
@@ -139,8 +148,24 @@ public class DashboardController {
         model.addAttribute("monthlyPayroll", formatCurrency(employeeRepository.sumSalary()));
         model.addAttribute("averageSalary", formatAverageSalary());
         model.addAttribute("message", message);
+        model.addAttribute("trashedEmployees", employeeRepository.findAllInTrash());
+model.addAttribute("changeLogs", changeLogRepository.findAllByOrderByChangedAtDesc());
         return "dashboard";
     }
+
+    @PostMapping("/trash/employees/{id}/restore")
+public String restoreEmployee(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    trashService.restore(id);
+    redirectAttributes.addFlashAttribute("message", "Funcionario restaurado com sucesso.");
+    return "redirect:/dashboard#trash";
+}
+
+@PostMapping("/trash/employees/{id}/delete")
+public String deletePermanently(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+    trashService.deletePermanently(id);
+    redirectAttributes.addFlashAttribute("message", "Funcionario excluido permanentemente.");
+    return "redirect:/dashboard#trash";
+}
 
     @PostMapping("/employees")
     public String createEmployee(
