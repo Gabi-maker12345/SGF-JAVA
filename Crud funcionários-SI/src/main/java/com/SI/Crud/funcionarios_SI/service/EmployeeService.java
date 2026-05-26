@@ -10,11 +10,13 @@ import com.SI.Crud.funcionarios_SI.repository.DepartmentRepository;
 import com.SI.Crud.funcionarios_SI.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
@@ -55,6 +57,12 @@ public class EmployeeService {
         employeeRepository.delete(employee);
     }
 
+    public EmployeeResponse updatePhoto(Long id, String photoPath) {
+        Employee employee = findEmployee(id);
+        employee.setPhotoPath(photoPath);
+        return toResponse(employeeRepository.save(employee));
+    }
+
     private Employee findEmployee(Long id) {
         return employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Funcionario nao encontrado com id: " + id));
@@ -86,6 +94,7 @@ public class EmployeeService {
                 .departmentId(department != null ? department.getId() : null)
                 .departmentName(department != null ? department.getName() : null)
                 .status(employee.getStatus())
+                .photoPath(employee.getPhotoPath())
                 .build();
 
 

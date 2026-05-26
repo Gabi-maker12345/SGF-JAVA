@@ -10,6 +10,7 @@ import com.SI.Crud.funcionarios_SI.repository.EmployeeRepository;
 import com.SI.Crud.funcionarios_SI.repository.UserRepository;
 import com.SI.Crud.funcionarios_SI.service.DepartmentService;
 import com.SI.Crud.funcionarios_SI.service.EmployeeService;
+import com.SI.Crud.funcionarios_SI.service.FileStorageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
@@ -39,6 +41,7 @@ public class DashboardController {
     private final UserRepository userRepository;
     private final EmployeeService employeeService;
     private final DepartmentService departmentService;
+    private final FileStorageService fileStorageService;
     private final PasswordEncoder passwordEncoder;
 
     @GetMapping("/")
@@ -159,6 +162,7 @@ public class DashboardController {
     public String createEmployee(
             @Valid @ModelAttribute EmployeeRequest employeeRequest,
             BindingResult bindingResult,
+            @RequestParam(value = "photo", required = false) MultipartFile photo,
             RedirectAttributes redirectAttributes
     ) {
         if (bindingResult.hasErrors()) {
@@ -171,7 +175,11 @@ public class DashboardController {
         }
 
         try {
-            employeeService.create(employeeRequest);
+            var response = employeeService.create(employeeRequest);
+            if (photo != null && !photo.isEmpty()) {
+                String fileName = fileStorageService.storeFile(photo);
+                employeeService.updatePhoto(response.getId(), fileName);
+            }
             return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", "Funcionario cadastrado e vinculado ao departamento.", "success");
         } catch (IllegalArgumentException | DataIntegrityViolationException exception) {
             return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", friendlyDatabaseMessage(exception), "error");
@@ -183,6 +191,7 @@ public class DashboardController {
             @PathVariable Long id,
             @Valid @ModelAttribute EmployeeRequest employeeRequest,
             BindingResult bindingResult,
+            @RequestParam(value = "photo", required = false) MultipartFile photo,
             RedirectAttributes redirectAttributes
     ) {
         if (bindingResult.hasErrors()) {
@@ -196,6 +205,10 @@ public class DashboardController {
 
         try {
             employeeService.update(id, employeeRequest);
+            if (photo != null && !photo.isEmpty()) {
+                String fileName = fileStorageService.storeFile(photo);
+                employeeService.updatePhoto(id, fileName);
+            }
             return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", "Funcionario actualizado com sucesso.", "success");
         } catch (IllegalArgumentException | DataIntegrityViolationException exception) {
             return redirectWithMessage(redirectAttributes, "redirect:/dashboard#employees", friendlyDatabaseMessage(exception), "error");

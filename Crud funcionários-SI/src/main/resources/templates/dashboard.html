@@ -48,6 +48,16 @@
             <button type="button" class="nav-link active" data-section-target="overview" data-title="Gestao de Funcionarios" data-subtitle="Organize pessoas, departamentos e custos num ambiente seguro."><i data-lucide="layout-dashboard"></i><span>Visao geral</span></button>
             <button type="button" class="nav-link" data-section-target="employees" data-title="Funcionarios" data-subtitle="Consulte, crie e edite todos os funcionarios cadastrados."><i data-lucide="users-round"></i><span>Funcionarios</span></button>
             <button type="button" class="nav-link" data-section-target="departments" data-title="Departamentos" data-subtitle="Gerencie os departamentos e acompanhe a distribuicao das equipas."><i data-lucide="network"></i><span>Departamentos</span></button>
+            <div class="px-4 py-2 mt-4">
+                <p class="text-xs uppercase text-slate-400 font-bold mb-2">Exportar Relatórios</p>
+                <div class="flex flex-col gap-2">
+                    <a th:href="@{/api/employees/export/csv}" class="btn-secondary py-1 text-xs justify-start"><i data-lucide="file-text" class="w-3 h-3"></i> CSV Funcionários</a>
+                    <a th:href="@{/api/employees/export/excel}" class="btn-secondary py-1 text-xs justify-start"><i data-lucide="file-spreadsheet" class="w-3 h-3"></i> Excel Funcionários</a>
+                    <a th:href="@{/api/employees/export/pdf}" class="btn-secondary py-1 text-xs justify-start"><i data-lucide="file-down" class="w-3 h-3"></i> PDF Funcionários</a>
+                    <a th:href="@{/api/employees/export/payroll}" class="btn-secondary py-1 text-xs justify-start"><i data-lucide="wallet" class="w-3 h-3"></i> Folha Salarial</a>
+                    <a th:href="@{/api/departments/export/excel}" class="btn-secondary py-1 text-xs justify-start"><i data-lucide="layers" class="w-3 h-3"></i> Excel Deptos</a>
+                </div>
+            </div>
         </nav>
 
         <div class="sidebar-insight">
@@ -148,7 +158,8 @@
                         <tr class="employee-row data-table-row" th:each="employee : ${employees}">
                             <td>
                                 <div class="person-cell">
-                                    <span class="avatar" th:text="${#strings.substring(employee.name,0,1)}">F</span>
+                                    <img th:if="${employee.photoPath != null}" th:src="@{/api/employees/photos/{path}(path=${employee.photoPath})}" class="avatar object-cover">
+                                    <span th:unless="${employee.photoPath != null}" class="avatar" th:text="${#strings.substring(employee.name,0,1)}">F</span>
                                     <span>
                                         <strong th:text="${employee.name}">Nome</strong>
                                         <small th:text="${employee.email}">email</small>
@@ -243,7 +254,7 @@
         <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
         <span class="premium-kicker">Cadastro</span>
         <h3 class="modal-title">Novo funcionario</h3>
-        <form th:action="@{/employees}" th:object="${employeeRequest}" method="post" class="form-grid">
+        <form th:action="@{/employees}" th:object="${employeeRequest}" method="post" enctype="multipart/form-data" class="form-grid">
             <label class="field-label">Nome completo<input class="field-input" th:field="*{name}" required></label>
             <label class="field-label">Email<input class="field-input" type="email" th:field="*{email}" required></label>
             <label class="field-label">Telefone<input class="field-input" th:field="*{phone}"></label>
@@ -255,6 +266,9 @@
                     <option th:each="departmentOption : ${departmentOptions}" th:value="${departmentOption.id}" th:text="${departmentOption.name}"></option>
                 </select>
             </label>
+            <label class="field-label md:col-span-2">Foto de Perfil
+                <input class="field-input" type="file" name="photo" accept="image/*">
+            </label>
             <button class="btn-primary justify-center md:col-span-2" type="submit">Guardar funcionario</button>
         </form>
     </div>
@@ -265,7 +279,7 @@
         <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
         <span class="premium-kicker">Edicao</span>
         <h3 class="modal-title">Editar funcionario</h3>
-        <form th:action="@{/employees/{id}/update(id=${employee.id})}" method="post" class="form-grid">
+        <form th:action="@{/employees/{id}/update(id=${employee.id})}" method="post" enctype="multipart/form-data" class="form-grid">
             <label class="field-label">Nome completo<input class="field-input" name="name" th:value="${employee.name}" required></label>
             <label class="field-label">Email<input class="field-input" type="email" name="email" th:value="${employee.email}" required></label>
             <label class="field-label">Telefone<input class="field-input" name="phone" th:value="${employee.phone}"></label>
@@ -275,6 +289,9 @@
                 <select class="field-input" name="departmentId" required>
                     <option th:each="departmentOption : ${departmentOptions}" th:value="${departmentOption.id}" th:selected="${departmentOption.id == employee.department.id}" th:text="${departmentOption.name}"></option>
                 </select>
+            </label>
+            <label class="field-label md:col-span-2">Foto de Perfil (Opcional)
+                <input class="field-input" type="file" name="photo" accept="image/*">
             </label>
             <button class="btn-primary justify-center md:col-span-2" type="submit">Actualizar funcionario</button>
         </form>

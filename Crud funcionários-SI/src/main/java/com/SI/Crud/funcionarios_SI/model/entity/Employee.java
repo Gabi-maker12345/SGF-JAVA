@@ -42,13 +42,16 @@ public class Employee {
     @Column(nullable = false)
     private BigDecimal salary;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department_id", nullable = false)
     private Department department;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EmployeeStatus status = EmployeeStatus.ATIVO;
+
+    @Column(name = "photo_path")
+    private String photoPath;
 
     
 }

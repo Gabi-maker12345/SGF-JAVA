@@ -21,4 +21,5 @@ public class EmployeeResponse {
     private Long departmentId;
     private String departmentName;
     private EmployeeStatus status;
+    private String photoPath;
 }

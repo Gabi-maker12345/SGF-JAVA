@@ -5,11 +5,13 @@ import com.SI.Crud.funcionarios_SI.model.entity.Department;
 import com.SI.Crud.funcionarios_SI.repository.DepartmentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class DepartmentService {
 
     private final DepartmentRepository departmentRepository;
