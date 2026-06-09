@@ -27,6 +27,8 @@ public class EmployeeRequest {
 
     private EmployeeStatus status;
 
+    private String reason; // motivo da alteração (opcional)
+
     @NotBlank(message = "O cargo e obrigatorio")
     private String position;
 

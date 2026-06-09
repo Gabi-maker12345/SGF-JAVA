@@ -18,6 +18,7 @@ public class DepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final EmployeeRepository employeeRepository;
+    private final ChangeLogService changeLogService;
 
     public List<Department> findAll() {
         return departmentRepository.findAll();
@@ -33,7 +34,17 @@ public class DepartmentService {
             throw new IllegalArgumentException("Ja existe um departamento cadastrado com este nome.");
         }
 
-        return departmentRepository.save(department);
+        Department savedDepartment = departmentRepository.save(department);
+        changeLogService.recordActivity(
+                "Criou departamento",
+                "Departamento",
+                savedDepartment.getId(),
+                savedDepartment.getName(),
+                null,
+                departmentSnapshot(savedDepartment),
+                "Departamento criado no sistema."
+        );
+        return savedDepartment;
     }
 
     public Department update(Long id, Department request) {
@@ -42,13 +53,34 @@ public class DepartmentService {
             throw new IllegalArgumentException("Ja existe outro departamento cadastrado com este nome.");
         }
 
+        String oldValue = departmentSnapshot(department);
         department.setName(request.getName());
         department.setDescription(request.getDescription());
-        return departmentRepository.save(department);
+        Department savedDepartment = departmentRepository.save(department);
+        changeLogService.recordActivity(
+                "Atualizou departamento",
+                "Departamento",
+                savedDepartment.getId(),
+                savedDepartment.getName(),
+                oldValue,
+                departmentSnapshot(savedDepartment),
+                "Dados do departamento actualizados."
+        );
+        return savedDepartment;
     }
 
     public void delete(Long id) {
-        departmentRepository.delete(findById(id));
+        Department department = findById(id);
+        changeLogService.recordActivity(
+                "Apagou departamento",
+                "Departamento",
+                department.getId(),
+                department.getName(),
+                departmentSnapshot(department),
+                null,
+                "Departamento removido do sistema."
+        );
+        departmentRepository.delete(department);
     }
 
     @Transactional
@@ -59,6 +91,15 @@ public class DepartmentService {
         List<Employee> employees = employeeRepository.findByDepartmentId(sourceDepartmentId);
         employees.forEach(employee -> employee.setDepartment(targetDepartment));
         employeeRepository.saveAll(employees);
+        changeLogService.recordActivity(
+                "Transferiu funcionarios e apagou departamento",
+                "Departamento",
+                sourceDepartment.getId(),
+                sourceDepartment.getName(),
+                "Departamento origem: " + sourceDepartment.getName(),
+                "Departamento destino: " + targetDepartment.getName(),
+                employees.size() + " funcionario(s) transferido(s) antes da remocao do departamento."
+        );
         departmentRepository.delete(sourceDepartment);
 
         return targetDepartment;
@@ -77,5 +118,10 @@ public class DepartmentService {
         }
 
         return create(newDepartment);
+    }
+
+    private String departmentSnapshot(Department department) {
+        return "Nome: " + department.getName()
+                + " | Descricao: " + (department.getDescription() == null || department.getDescription().isBlank() ? "Sem descricao" : department.getDescription());
     }
 }

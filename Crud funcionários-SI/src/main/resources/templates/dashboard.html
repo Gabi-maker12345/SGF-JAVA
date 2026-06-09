@@ -1,9 +1,18 @@
 <!doctype html>
-<html lang="pt" class="dark scroll-smooth" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt" class="scroll-smooth" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SGF | Dashboard</title>
+    <script>
+        (() => {
+            try {
+                document.documentElement.classList.toggle('dark', localStorage.getItem('si-theme') === 'dark');
+            } catch (error) {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
     <script>
         window.tailwind = window.tailwind || {};
         window.tailwind.config = {
@@ -37,7 +46,7 @@
 <div class="dashboard-layout">
     <aside id="sidebar" class="sidebar-shell -translate-x-[110%] lg:translate-x-0">
         <a href="/dashboard" class="brand-lockup sidebar-brand">
-            <span class="brand-emblem"><i data-lucide="sparkles"></i></span>
+            <span class="brand-emblem"><i data-lucide="users-round"></i></span>
             <span>
                 <strong>SGF</strong>
                 <small>RH Intelligence</small>
@@ -48,6 +57,7 @@
             <button type="button" class="nav-link active" data-section-target="overview" data-title="Gestao de Funcionarios" data-subtitle="Organize pessoas, departamentos e custos num ambiente seguro."><i data-lucide="layout-dashboard"></i><span>Visao geral</span></button>
             <button type="button" class="nav-link" data-section-target="employees" data-title="Funcionarios" data-subtitle="Consulte, crie e edite todos os funcionarios cadastrados."><i data-lucide="users-round"></i><span>Funcionarios</span></button>
             <button type="button" class="nav-link" data-section-target="departments" data-title="Departamentos" data-subtitle="Gerencie os departamentos e acompanhe a distribuicao das equipas."><i data-lucide="network"></i><span>Departamentos</span></button>
+            <button type="button" class="nav-link" data-section-target="history" data-title="Historico de actividades" data-subtitle="Acompanhe as acoes realizadas pela sua conta no sistema."><i data-lucide="activity"></i><span>Historico</span></button>
             <div class="px-4 py-2 mt-4">
                 <p class="text-xs uppercase text-slate-400 font-bold mb-2">Exportar Relatórios</p>
                 <div class="flex flex-col gap-2">
@@ -214,10 +224,10 @@
                         <tbody>
                         <tr class="department-row data-table-row" th:each="department : ${departments}">
                             <td>
-                                <span class="department-name-cell">
+                                <button type="button" class="department-name-cell department-open-button" th:attr="data-open-modal='departmentEmployeesModal-' + ${department.id()}" th:aria-label="'Ver funcionarios do departamento ' + ${department.name()}">
                                     <strong th:text="${department.name()}">Departamento</strong>
                                     <small th:text="${department.description() == null || department.description().isBlank() ? 'Sem descricao' : department.description()}">Descricao</small>
-                                </span>
+                                </button>
                             </td>
                             <td><span class="status-badge violet" th:text="${department.employees()} + ' pessoas'">0 pessoas</span></td>
                             <td>
@@ -239,6 +249,85 @@
                 </div>
             </article>
         </section>
+
+        <section id="history" class="dashboard-section" data-view-section>
+            <article class="glass-card history-panel reveal-up">
+                <div class="panel-heading">
+                    <div>
+                        <span class="premium-kicker">Auditoria pessoal</span>
+                        <h2>Historico de actividades</h2>
+                    </div>
+                    <label class="history-filter">
+                        <span>Periodo</span>
+                        <select id="historyPeriodFilter" class="field-input">
+                            <option value="all">Tudo</option>
+                            <option value="1">Hoje</option>
+                            <option value="7">Ultimos 7 dias</option>
+                            <option value="30">Ultimos 30 dias</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="empty-state compact" th:if="${#lists.isEmpty(activityLogs)}">
+                    <span class="metric-icon violet"><i data-lucide="activity"></i></span>
+                    <p>Nenhuma actividade registada.</p>
+                    <small>As proximas acoes feitas pela sua conta aparecerao aqui.</small>
+                </div>
+
+                <div id="activityEmptyFilter" class="empty-state compact hidden">
+                    <span class="metric-icon orange"><i data-lucide="circle-alert"></i></span>
+                    <p>Nenhuma actividade nesse periodo.</p>
+                    <small>Altere o filtro para consultar outros registos.</small>
+                </div>
+
+                <div class="activity-list" th:if="${!#lists.isEmpty(activityLogs)}">
+                    <details class="activity-dropdown data-table-row" th:each="log : ${activityLogs}" th:attr="data-activity-time=${log.changedAt}">
+                        <summary>
+                            <span class="activity-summary-icon"><i data-lucide="activity"></i></span>
+                            <span class="activity-summary-text">
+                                <strong th:text="${log.title}">Actividade</strong>
+                                <small>
+                                    <span th:text="${log.entityType}">Entidade</span>
+                                    <span> - </span>
+                                    <span th:text="${log.changedAt}">Data</span>
+                                </small>
+                            </span>
+                            <span class="activity-summary-chevron"><i data-lucide="chevron-down"></i></span>
+                        </summary>
+                        <div class="activity-details">
+                            <div>
+                                <span>Acao</span>
+                                <strong th:text="${log.action}">Acao</strong>
+                            </div>
+                            <div>
+                                <span>Registo</span>
+                                <strong th:text="${log.entityName}">Registo</strong>
+                            </div>
+                            <div>
+                                <span>Utilizador</span>
+                                <strong th:text="${log.changedBy}">usuario@email.com</strong>
+                            </div>
+                            <div>
+                                <span>Data</span>
+                                <strong th:text="${log.changedAt}">Data</strong>
+                            </div>
+                            <div class="activity-detail-wide" th:if="${log.oldValue != null && !log.oldValue.isBlank()}">
+                                <span>Valor anterior</span>
+                                <p th:text="${log.oldValue}">Anterior</p>
+                            </div>
+                            <div class="activity-detail-wide" th:if="${log.newValue != null && !log.newValue.isBlank()}">
+                                <span>Novo valor</span>
+                                <p th:text="${log.newValue}">Novo</p>
+                            </div>
+                            <div class="activity-detail-wide" th:if="${log.details != null && !log.details.isBlank()}">
+                                <span>Detalhes</span>
+                                <p th:text="${log.details}">Detalhes</p>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+            </article>
+        </section>
     </main>
 </div>
 
@@ -248,6 +337,14 @@
         <span class="premium-kicker">Cadastro</span>
         <h3 class="modal-title">Novo funcionario</h3>
         <form th:action="@{/employees}" th:object="${employeeRequest}" method="post" enctype="multipart/form-data" class="form-grid">
+            <label class="photo-upload md:col-span-2" data-photo-upload>
+                <input type="file" name="photo" accept="image/*">
+                <span class="photo-upload-avatar"><i data-lucide="circle-user-round"></i></span>
+                <span class="photo-upload-copy">
+                    <strong>Foto de perfil</strong>
+                    <small data-photo-name>Clique no rosto para escolher uma imagem</small>
+                </span>
+            </label>
             <label class="field-label">Nome completo<input class="field-input" th:field="*{name}" required></label>
             <label class="field-label">Email<input class="field-input" type="email" th:field="*{email}" required></label>
             <label class="field-label">Telefone<input class="field-input" th:field="*{phone}" inputmode="tel" placeholder="+244000000000" title="Use o formato angolano +244000000000"></label>
@@ -258,9 +355,6 @@
                     <option value="">Selecione</option>
                     <option th:each="departmentOption : ${departmentOptions}" th:value="${departmentOption.id}" th:text="${departmentOption.name}"></option>
                 </select>
-            </label>
-            <label class="field-label md:col-span-2">Foto de Perfil
-                <input class="field-input" type="file" name="photo" accept="image/*">
             </label>
             <button class="btn-primary justify-center md:col-span-2" type="submit">Guardar funcionario</button>
         </form>
@@ -273,6 +367,17 @@
         <span class="premium-kicker">Edicao</span>
         <h3 class="modal-title">Editar funcionario</h3>
         <form th:action="@{/employees/{id}/update(id=${employee.id})}" method="post" enctype="multipart/form-data" class="form-grid">
+            <label class="photo-upload md:col-span-2" data-photo-upload>
+                <input type="file" name="photo" accept="image/*">
+                <span class="photo-upload-avatar">
+                    <img th:if="${employee.photoPath != null}" th:src="@{/api/employees/photos/{path}(path=${employee.photoPath})}" alt="">
+                    <i th:unless="${employee.photoPath != null}" data-lucide="circle-user-round"></i>
+                </span>
+                <span class="photo-upload-copy">
+                    <strong>Foto de perfil</strong>
+                    <small data-photo-name th:text="${employee.photoPath != null ? 'Clique para trocar a foto actual' : 'Clique no rosto para escolher uma imagem'}">Clique para trocar a foto</small>
+                </span>
+            </label>
             <label class="field-label">Nome completo<input class="field-input" name="name" th:value="${employee.name}" required></label>
             <label class="field-label">Email<input class="field-input" type="email" name="email" th:value="${employee.email}" required></label>
             <label class="field-label">Telefone<input class="field-input" name="phone" th:value="${employee.phone}" inputmode="tel" placeholder="+244000000000" title="Use o formato angolano +244000000000"></label>
@@ -282,9 +387,6 @@
                 <select class="field-input" name="departmentId" required>
                     <option th:each="departmentOption : ${departmentOptions}" th:value="${departmentOption.id}" th:selected="${departmentOption.id == employee.department.id}" th:text="${departmentOption.name}"></option>
                 </select>
-            </label>
-            <label class="field-label md:col-span-2">Foto de Perfil (Opcional)
-                <input class="field-input" type="file" name="photo" accept="image/*">
             </label>
             <button class="btn-primary justify-center md:col-span-2" type="submit">Actualizar funcionario</button>
         </form>
@@ -355,6 +457,61 @@
                             </form>
                         </div>
                     </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="modal" th:each="departmentItem : ${departments}" th:id="'departmentEmployeesModal-' + ${departmentItem.id()}" aria-hidden="true">
+    <div class="modal-card wide department-members-modal">
+        <button type="button" class="modal-close" data-close-modal aria-label="Fechar"><i data-lucide="x"></i></button>
+        <span class="premium-kicker">Equipa do departamento</span>
+        <h3 class="modal-title" th:text="${departmentItem.name()}">Departamento</h3>
+        <p class="modal-copy left">
+            <span th:text="${departmentItem.description() == null || departmentItem.description().isBlank() ? 'Sem descricao cadastrada.' : departmentItem.description()}">Descricao</span>
+        </p>
+
+        <div class="department-members-summary">
+            <span class="metric-icon violet"><i data-lucide="users-round"></i></span>
+            <div>
+                <strong th:text="${departmentItem.employees()}">0</strong>
+                <small th:text="${departmentItem.employees() == 1 ? 'funcionario activo vinculado' : 'funcionarios activos vinculados'}">funcionarios activos vinculados</small>
+            </div>
+        </div>
+
+        <div class="empty-state compact modal-empty" th:if="${departmentItem.employees() == 0}">
+            <span class="metric-icon blue"><i data-lucide="users-round"></i></span>
+            <p>Nenhum funcionario neste departamento.</p>
+            <small>Cadastre ou edite um funcionario para vincula-lo a este departamento.</small>
+        </div>
+
+        <div class="table-wrap modal-table-wrap" th:if="${departmentItem.employees() > 0}">
+            <table class="premium-table department-members-table">
+                <thead>
+                <tr>
+                    <th>Funcionario</th>
+                    <th>Cargo</th>
+                    <th>Contacto</th>
+                    <th>Salario</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="departmentEmployee : ${employees}" th:if="${departmentEmployee.department.id == departmentItem.id()}">
+                    <td>
+                        <div class="person-cell">
+                            <img th:if="${departmentEmployee.photoPath != null}" th:src="@{/api/employees/photos/{path}(path=${departmentEmployee.photoPath})}" class="avatar object-cover">
+                            <span th:unless="${departmentEmployee.photoPath != null}" class="avatar" th:text="${#strings.substring(departmentEmployee.name,0,1)}">F</span>
+                            <span>
+                                <strong th:text="${departmentEmployee.name}">Nome</strong>
+                                <small th:text="${departmentEmployee.email}">email</small>
+                            </span>
+                        </div>
+                    </td>
+                    <td th:text="${departmentEmployee.position}">Cargo</td>
+                    <td th:text="${departmentEmployee.phone == null || departmentEmployee.phone.isBlank() ? 'Sem telefone' : departmentEmployee.phone}">Telefone</td>
+                    <td class="salary-cell" th:text="${#numbers.formatDecimal(departmentEmployee.salary, 0, 'POINT', 0, 'COMMA')} + ' Kz'">0 Kz</td>
                 </tr>
                 </tbody>
             </table>

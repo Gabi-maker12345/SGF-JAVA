@@ -11,6 +11,7 @@ import com.SI.Crud.funcionarios_SI.repository.EmployeeRepository;
 import com.SI.Crud.funcionarios_SI.repository.UserRepository;
 import com.SI.Crud.funcionarios_SI.service.DepartmentService;
 import com.SI.Crud.funcionarios_SI.service.EmployeeService;
+import com.SI.Crud.funcionarios_SI.service.ChangeLogService;
 import jakarta.servlet.http.HttpServletResponse;
 import com.SI.Crud.funcionarios_SI.service.FileStorageService;
 import jakarta.validation.Valid;
@@ -45,6 +46,7 @@ public class DashboardController {
     private final UserRepository userRepository;
     private final EmployeeService employeeService;
     private final DepartmentService departmentService;
+    private final ChangeLogService changeLogService;
     private final FileStorageService fileStorageService;
     private final PasswordEncoder passwordEncoder;
 
@@ -167,6 +169,7 @@ public class DashboardController {
         model.addAttribute("departmentsCount", departmentRepository.count());
         model.addAttribute("monthlyPayroll", formatCurrency(employeeRepository.sumActiveSalary()));
         model.addAttribute("averageSalary", formatAverageSalary());
+        model.addAttribute("activityLogs", changeLogService.findForCurrentUser());
         model.addAttribute("message", message);
         model.addAttribute("messageType", messageType);
         return "dashboard";

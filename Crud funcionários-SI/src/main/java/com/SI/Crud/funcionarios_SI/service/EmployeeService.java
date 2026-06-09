@@ -21,6 +21,7 @@ public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
     private final DepartmentRepository departmentRepository;
+    private final ChangeLogService changeLogService;
 
     public List<EmployeeResponse> findAll() {
         return employeeRepository.findAllActive().stream()
@@ -39,7 +40,17 @@ public class EmployeeService {
 
         Employee employee = new Employee();
         fillEmployee(employee, request);
-        return toResponse(employeeRepository.save(employee));
+        Employee savedEmployee = employeeRepository.save(employee);
+        changeLogService.recordActivity(
+                "Criou funcionario",
+                "Funcionario",
+                savedEmployee.getId(),
+                savedEmployee.getName(),
+                null,
+                employeeSnapshot(savedEmployee),
+                "Funcionario cadastrado e vinculado ao departamento " + savedEmployee.getDepartment().getName() + "."
+        );
+        return toResponse(savedEmployee);
     }
 
     public EmployeeResponse update(Long id, EmployeeRequest request) {
@@ -48,20 +59,50 @@ public class EmployeeService {
             throw new IllegalArgumentException("Ja existe outro funcionario cadastrado com este email.");
         }
 
+        String oldValue = employeeSnapshot(employee);
         fillEmployee(employee, request);
-        return toResponse(employeeRepository.save(employee));
+        Employee savedEmployee = employeeRepository.save(employee);
+        changeLogService.recordActivity(
+                "Atualizou funcionario",
+                "Funcionario",
+                savedEmployee.getId(),
+                savedEmployee.getName(),
+                oldValue,
+                employeeSnapshot(savedEmployee),
+                "Dados do funcionario actualizados."
+        );
+        return toResponse(savedEmployee);
     }
 
     public void delete(Long id) {
         Employee employee = findEmployee(id);
         employee.setDeletedAt(java.time.LocalDateTime.now());
         employeeRepository.save(employee);
+        changeLogService.recordActivity(
+                "Enviou funcionario para a lixeira",
+                "Funcionario",
+                employee.getId(),
+                employee.getName(),
+                employeeSnapshot(employee),
+                "deletedAt=" + employee.getDeletedAt(),
+                "Funcionario removido da listagem activa e mantido na lixeira."
+        );
     }
 
     public void restore(Long id) {
         Employee employee = findEmployee(id);
+        String oldValue = "deletedAt=" + employee.getDeletedAt();
         employee.setDeletedAt(null);
         employeeRepository.save(employee);
+        changeLogService.recordActivity(
+                "Restaurou funcionario",
+                "Funcionario",
+                employee.getId(),
+                employee.getName(),
+                oldValue,
+                employeeSnapshot(employee),
+                "Funcionario restaurado para a tabela principal."
+        );
     }
 
     public void deletePermanently(Long id) {
@@ -69,13 +110,33 @@ public class EmployeeService {
         if (employee.getDeletedAt() == null) {
             throw new IllegalArgumentException("Envie o funcionario para a lixeira antes de apagar definitivamente.");
         }
+        changeLogService.recordActivity(
+                "Apagou funcionario definitivamente",
+                "Funcionario",
+                employee.getId(),
+                employee.getName(),
+                employeeSnapshot(employee),
+                null,
+                "Registo removido definitivamente da base de dados."
+        );
         employeeRepository.delete(employee);
     }
 
     public EmployeeResponse updatePhoto(Long id, String photoPath) {
         Employee employee = findEmployee(id);
+        String oldValue = employee.getPhotoPath();
         employee.setPhotoPath(photoPath);
-        return toResponse(employeeRepository.save(employee));
+        Employee savedEmployee = employeeRepository.save(employee);
+        changeLogService.recordActivity(
+                "Atualizou fotografia do funcionario",
+                "Funcionario",
+                savedEmployee.getId(),
+                savedEmployee.getName(),
+                oldValue,
+                photoPath,
+                "Fotografia do funcionario actualizada."
+        );
+        return toResponse(savedEmployee);
     }
 
     private Employee findEmployee(Long id) {
@@ -113,5 +174,16 @@ public class EmployeeService {
                 .build();
 
 
+    }
+
+    private String employeeSnapshot(Employee employee) {
+        Department department = employee.getDepartment();
+        return "Nome: " + employee.getName()
+                + " | Email: " + employee.getEmail()
+                + " | Telefone: " + (employee.getPhone() == null || employee.getPhone().isBlank() ? "Sem telefone" : employee.getPhone())
+                + " | Cargo: " + employee.getPosition()
+                + " | Salario: " + employee.getSalary()
+                + " | Departamento: " + (department != null ? department.getName() : "Sem departamento")
+                + " | Estado: " + employee.getStatus();
     }
 }

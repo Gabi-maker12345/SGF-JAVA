@@ -1,9 +1,18 @@
 <!doctype html>
-<html lang="pt" class="dark scroll-smooth" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt" class="scroll-smooth" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SGF | Login</title>
+    <script>
+        (() => {
+            try {
+                document.documentElement.classList.toggle('dark', localStorage.getItem('si-theme') === 'dark');
+            } catch (error) {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
     <script>
         window.tailwind = window.tailwind || {};
         window.tailwind.config = { darkMode: 'class', theme: { extend: { colors: { navy: '#07111F', midnight: '#0B1220', primary: '#3B82F6', premium: '#7C3AED' } } } };
@@ -16,7 +25,7 @@
 <body class="premium-shell min-h-screen text-slate-50" th:attr="data-page-message=${message},data-page-message-type=${messageType}">
 <header class="public-header reveal-down">
     <a href="/" class="brand-lockup">
-        <span class="brand-emblem"><i data-lucide="sparkles"></i></span>
+        <span class="brand-emblem"><i data-lucide="users-round"></i></span>
         <span><strong>SGF</strong><small>Acesso seguro</small></span>
     </a>
     <button type="button" id="themeToggle" class="icon-glass" aria-label="Alternar modo"><i data-lucide="moon"></i></button>
@@ -39,7 +48,12 @@
             <h2>Bem-vindo de volta</h2>
             <form id="loginForm" th:action="@{/login}" method="post" class="mt-7 space-y-4" autocomplete="off" data-clear-on-load>
                 <label class="field-label">Email<input class="field-input" type="email" name="email" value="" autocomplete="off" autocapitalize="none" spellcheck="false" required></label>
-                <label class="field-label">Senha<input class="field-input" type="password" name="password" value="" autocomplete="new-password" required></label>
+                <label class="field-label">Senha
+                    <span class="password-control">
+                        <input class="field-input" type="password" name="password" value="" autocomplete="new-password" required>
+                        <button type="button" class="password-toggle" data-password-toggle aria-label="Mostrar senha"><i data-lucide="eye"></i></button>
+                    </span>
+                </label>
                 <button class="btn-primary w-full justify-center" type="submit">Entrar</button>
             </form>
             <p class="mt-6 text-center text-sm text-slate-400">

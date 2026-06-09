@@ -1,9 +1,18 @@
 <!doctype html>
-<html lang="pt" class="dark scroll-smooth" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt" class="scroll-smooth" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SGF | Criar conta</title>
+    <script>
+        (() => {
+            try {
+                document.documentElement.classList.toggle('dark', localStorage.getItem('si-theme') === 'dark');
+            } catch (error) {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
     <script>
         window.tailwind = window.tailwind || {};
         window.tailwind.config = { darkMode: 'class', theme: { extend: { colors: { navy: '#07111F', midnight: '#0B1220', primary: '#3B82F6', premium: '#7C3AED' } } } };
@@ -16,10 +25,13 @@
 <body class="premium-shell min-h-screen text-slate-50" th:attr="data-page-message=${message},data-page-message-type=${messageType}">
 <header class="public-header reveal-down">
     <a href="/" class="brand-lockup">
-        <span class="brand-emblem"><i data-lucide="sparkles"></i></span>
+        <span class="brand-emblem"><i data-lucide="users-round"></i></span>
         <span><strong>SGF</strong><small>Novo acesso</small></span>
     </a>
-    <a href="/login" class="btn-secondary">Login</a>
+    <nav class="header-actions">
+        <button type="button" id="themeToggle" class="icon-glass" aria-label="Alternar modo"><i data-lucide="moon"></i></button>
+        <a href="/login" class="btn-secondary">Login</a>
+    </nav>
 </header>
 
 <main class="mx-auto grid min-h-[calc(100vh-96px)] max-w-6xl items-center px-5 pb-12">
@@ -40,7 +52,12 @@
             <form th:action="@{/register}" th:object="${registerRequest}" method="post" class="mt-7 space-y-4">
                 <label class="field-label">Nome completo<input class="field-input" th:field="*{name}" required></label>
                 <label class="field-label">Email<input class="field-input" type="email" th:field="*{email}" required></label>
-                <label class="field-label">Senha<input class="field-input" type="password" th:field="*{password}" minlength="6" required></label>
+                <label class="field-label">Senha
+                    <span class="password-control">
+                        <input class="field-input" type="password" th:field="*{password}" minlength="6" required>
+                        <button type="button" class="password-toggle" data-password-toggle aria-label="Mostrar senha"><i data-lucide="eye"></i></button>
+                    </span>
+                </label>
                 <button class="btn-primary w-full justify-center" type="submit">Criar conta</button>
             </form>
             <p class="mt-6 text-center text-sm text-slate-400">
